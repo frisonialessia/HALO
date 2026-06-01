@@ -73,7 +73,7 @@ export default function HaloApp() {
       <div className="grain" />
 
       {screen === "landing" && (
-        <div className="screen active">
+        <div className="screen active" id="s-landing">
           <nav>
             <div className="lbrand">
               <Orb className="dot" /> Halo
@@ -98,7 +98,7 @@ export default function HaloApp() {
             <h1>
               Domina las recomendaciones
               <br />
-              de la <span className="g">IA.</span>
+              de la <span className="accent-gradient">IA.</span>
             </h1>
             <p className="sub-title">Que la IA te elija a ti antes que a tu competencia.</p>
             <div className="glass lsearch">
@@ -107,7 +107,7 @@ export default function HaloApp() {
             </div>
             <div className="sectors">
               Ayudando a negocios a dominar la visibilidad en{" "}
-              <b style={{ color: "var(--deep)" }}>{SECTORS[sectorIdx]}</b>
+              <b className="accent-gradient">{SECTORS[sectorIdx]}</b>
             </div>
             <div className="ltrust">
               <span>Resultados en segundos</span>
@@ -128,7 +128,7 @@ export default function HaloApp() {
       )}
 
       {screen === "loading" && (
-        <div className="screen active" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="screen active" id="s-load">
           <div className="loadbox">
             <svg width="120" height="120" className="ring">
               <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(120,80,50,.12)" strokeWidth="8" />
@@ -152,7 +152,7 @@ export default function HaloApp() {
               </defs>
             </svg>
             <h2>
-              Analizando <span className="lurl">tu negocio</span>
+              Analizando <span className="lurl accent-gradient">tu negocio</span>
             </h2>
             <div className="lsteps">
               {LOAD_STEPS.map((s, i) => (
@@ -174,6 +174,7 @@ export default function HaloApp() {
         <AppShell
           view={view}
           setView={setView}
+          setScreen={setScreen}
           menuOpen={menuOpen}
           setMenuOpen={setMenuOpen}
         />
@@ -186,16 +187,18 @@ export default function HaloApp() {
 function AppShell({
   view,
   setView,
+  setScreen,
   menuOpen,
   setMenuOpen,
 }: {
   view: View;
   setView: (v: View) => void;
+  setScreen: (s: Screen) => void;
   menuOpen: boolean;
   setMenuOpen: (b: boolean) => void;
 }) {
   return (
-    <div className="screen active">
+    <div className="screen active" id="s-app">
       <header>
         <div className="hbar">
           <div className="logo haloOrb" onClick={() => setView("halo")}>
@@ -229,7 +232,15 @@ function AppShell({
                 </div>
                 <div className="di">Cambiar de negocio</div>
                 <div className="sep" />
-                <div className="di out">Cerrar sesión</div>
+                <div
+                  className="di out"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setScreen("landing");
+                  }}
+                >
+                  Cerrar sesión
+                </div>
               </div>
             )}
           </div>
@@ -355,11 +366,11 @@ function HaloView() {
         <div className="lbody">
           <div className="metric">
             <div className="metric-row">
-              <div className="metric-n">3 de 10</div>
-              <div className="metric-trend">+1 esta semana</div>
+              <span className="metric-n accent-gradient">3 de 10</span>
+              <span className="metric-trend accent-gradient">↑ +1 esta semana</span>
             </div>
             <div className="metric-lbl">
-              Cuando alguien le pregunta a la IA por un italiano en tu zona, te eligen 3 de cada 10 veces.
+              Cuando alguien le pregunta a la IA por un negocio como el tuyo en Milán, te eligen 3 de cada 10 veces.
             </div>
           </div>
           <h2>Lo que ChatGPT, Perplexity y Gemini saben de ti</h2>
@@ -380,7 +391,7 @@ function HaloView() {
                 </span>
                 {k.t}
               </div>
-              <div className={`kd ${k.op ? "op" : ""}`}>{k.d}</div>
+              <div className={`kd ${k.op ? "op accent-gradient" : ""}`}>{k.d}</div>
             </div>
           ))}
         </div>
@@ -529,8 +540,8 @@ function DashView() {
       <div className="bento">
         <div className="bento-hero">
           <div className="bh-label">Te eligen</div>
-          <div className="bh-num">
-            3 <span>de 10</span>
+          <div className="bh-num accent-gradient">
+            3 <span className="accent-gradient">de 10</span>
           </div>
           <div className="bh-sub">
             Cada vez que alguien le pregunta a la IA por un negocio como el tuyo en Milán.
@@ -539,7 +550,7 @@ function DashView() {
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 15l7-7 7 7" />
             </svg>
-            +1 esta semana
+            <span className="accent-gradient">+1 esta semana</span>
           </div>
         </div>
 
@@ -582,14 +593,14 @@ function DashView() {
                 >
                   {c.name.charAt(0)}
                 </div>
-                <div className="cname">{c.name}</div>
+                <div className={`cname ${c.you ? "accent-gradient" : ""}`}>{c.name}</div>
                 <div className="cbar">
                   <i
                     className={c.you ? "youbar" : ""}
                     style={{ width: `${(c.score / 10) * 100}%` }}
                   />
                 </div>
-                <div className="cval">{c.score}/10</div>
+                <div className={`cval ${c.you ? "accent-gradient" : ""}`}>{c.score}/10</div>
               </div>
             ))}
           </div>
@@ -694,7 +705,7 @@ function DashView() {
             ))}
           </div>
           <div className="znote">
-            Tu fuerte está en <b>Brera, Duomo y Quadrilatero</b>. En <b>San Siro y Lambrate</b> casi no apareces todavía.
+            Tu fuerte está en <b className="accent-gradient">Brera, Duomo y Quadrilatero</b>. En <b className="accent-gradient">San Siro y Lambrate</b> casi no apareces todavía.
           </div>
         </div>
       </div>
