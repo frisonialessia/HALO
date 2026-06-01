@@ -1,0 +1,28 @@
+:root {
+  --text: #17181B;
+  --text-2: #6F7278;
+  --muted: #aeb0b4;
+  --coral: #ff7a45;
+  --amber: #ffb020;
+  --deep: #f15a2b;
+  --sand: #FBF9F8;
+  --cream: #FCFAF7;
+  --line: #ECE7E1;
+  --r-input: 13px;
+  --r-card: 16px;
+  --r-btn: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Montserrat", system-ui, sans-serif;
+  color: var(--text);
+  background: var(--cream);
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
