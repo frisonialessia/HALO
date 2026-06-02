@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
 import { addHistory, listHistory, removeHistory, type HistoryEntry } from "@/lib/history";
 import { isValidEmail, rememberLeadEmail, savedLeadEmail, submitLead } from "@/lib/lead";
-import { DEMO_AUDIT, mockAudit } from "@/lib/mock";
+import { mockAudit } from "@/lib/mock";
 import { loadPrefs, savePrefs } from "@/lib/prefs";
 
 // ============== Orbe (logo) ==============
@@ -596,21 +596,6 @@ export default function HaloApp() {
   }
 
   // Demo sin coste: la animación de siempre con los datos de ejemplo.
-  function startDemo() {
-    setAudit(null);
-    setAnalyzingLabel("Osteria Vista");
-    setScreen("loading");
-    setLoadDone(-1);
-    LOAD_STEPS.forEach((_, i) => {
-      setTimeout(() => setLoadDone(i), 500 + i * 620);
-    });
-    setTimeout(() => {
-      setAudit(DEMO_AUDIT);
-      setScreen("app");
-      setView("halo");
-    }, 500 + 4 * 620 + 450);
-  }
-
   // "Entrar" empuja a añadir SU negocio (no a la demo): foco en el campo.
   function enterApp() {
     bizInputRef.current?.focus();
@@ -702,18 +687,7 @@ export default function HaloApp() {
               <span>Sin registro</span>
               <span className="sep" />
               <span>Resultados en segundos</span>
-              <span className="sep" />
-              <span
-                style={{ cursor: "pointer", color: "var(--text)", fontWeight: 600 }}
-                onClick={startDemo}
-              >
-                Probar con un ejemplo →
-              </span>
             </div>
-          </div>
-          <div className="landing-teaser" onClick={startDemo}>
-            <span className="lt-text">Esto está diciendo ChatGPT sobre tu negocio</span>
-            <Orb className="lt-orb" />
           </div>
           </div>
 
