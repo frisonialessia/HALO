@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
 import { addHistory, listHistory, removeHistory, type HistoryEntry } from "@/lib/history";
 import { isValidEmail, rememberLeadEmail, savedLeadEmail, submitLead } from "@/lib/lead";
+import { DEMO_AUDIT } from "@/lib/mock";
 
 // ============== Orbe (logo) ==============
 function Orb({ className = "", thinking = false }: { className?: string; thinking?: boolean }) {
@@ -99,6 +100,7 @@ type AuditData = {
   shareOfAnswer: number; // 0..1 → "X de 10"
   byEngine: Record<string, number>;
   probes?: { query: string; appeared: boolean; position?: number }[];
+  demo?: boolean; // true → estado simulado (escaparate completo, sin API)
 };
 type AiAssets = {
   description: string;
@@ -442,18 +444,21 @@ export default function HaloApp() {
   // Demo sin coste: la animación de siempre con los datos de ejemplo.
   function startDemo() {
     setAudit(null);
+    setAnalyzingLabel("Osteria Vista");
     setScreen("loading");
     setLoadDone(-1);
     LOAD_STEPS.forEach((_, i) => {
       setTimeout(() => setLoadDone(i), 500 + i * 620);
     });
     setTimeout(() => {
+      setAudit(DEMO_AUDIT);
       setScreen("app");
       setView("halo");
     }, 500 + 4 * 620 + 450);
   }
 
   function enterApp() {
+    setAudit(DEMO_AUDIT);
     setScreen("app");
     setView("halo");
   }
@@ -928,7 +933,7 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
     setErr("");
     setLoading(true);
     try {
-      if (!audit?.business) {
+      if (!audit || audit.demo) {
         // Demo: ejemplo instantáneo, sin llamar a la API de pago.
         await new Promise((r) => setTimeout(r, 850));
         setAssets(SAMPLE_ASSETS);
@@ -1335,14 +1340,13 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
 
 // ============== Vista DASHBOARD (monocromo) ==============
 function DashView({ audit }: { audit: AuditData | null }) {
-  if (audit) return <DashReal audit={audit} />;
-  return <DashDemo />;
+  if (audit && !audit.demo) return <DashReal audit={audit} />;
+  return <DashDemo score={audit ? Math.round(audit.shareOfAnswer * 10) : 3} />;
 }
 
 // Dashboard de la DEMO (datos de ejemplo). Escaparate completo de lo que Halo
 // llegará a medir; en un análisis real solo enseñamos lo verificable.
-function DashDemo() {
-  const score = 3;
+function DashDemo({ score }: { score: number }) {
   return (
     <>
       <div className="dhead">
