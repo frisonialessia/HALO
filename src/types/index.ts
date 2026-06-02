@@ -8,10 +8,15 @@ export type Engine =
   | "grok"
   | "deepseek";
 
+// Qué es lo que el usuario manda: condiciona cómo medimos (un local se busca
+// por ubicación; un producto/servicio online, por descubrimiento y compra).
+export type BusinessKind = "local" | "product" | "online";
+
 export interface Project {
   id: string;
   name: string;
   business_type: string;
+  kind?: BusinessKind;
   city?: string;
   website?: string;
 }

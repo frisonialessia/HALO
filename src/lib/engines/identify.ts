@@ -1,4 +1,4 @@
-import type { Project } from "@/types";
+import type { Project, BusinessKind } from "@/types";
 
 // Identifica un negocio a partir de lo que el usuario pega en la landing:
 // una URL, un nombre, un enlace de Google Maps o un perfil de redes.
@@ -10,6 +10,7 @@ const PPLX_URL = "https://api.perplexity.ai/chat/completions";
 export interface IdentifiedBusiness {
   name: string;
   business_type: string;
+  kind: BusinessKind;
   city?: string;
   website?: string;
 }
@@ -31,11 +32,14 @@ export async function identifyBusiness(input: string): Promise<IdentifiedBusines
         {
           role: "system",
           content:
-            "Identificas un negocio local a partir de lo que te da el usuario " +
-            "(una web, un nombre, un enlace de Google Maps o de redes sociales). " +
-            "Devuelve SOLO un objeto JSON válido, sin texto alrededor ni markdown, con estas claves: " +
-            'name (nombre del negocio), business_type (tipo en español, ej. "restaurante italiano"), ' +
-            "city (ciudad si la conoces, si no cadena vacía), website (dominio si lo conoces, si no cadena vacía).",
+            "Identificas QUÉ te da el usuario (una web, una marca, un producto, un negocio " +
+            "local o un servicio online) y devuelves datos estructurados. " +
+            "Devuelve SOLO un objeto JSON válido, sin texto ni markdown alrededor, con estas claves: " +
+            'name (nombre real de la marca o negocio); ' +
+            'business_type (categoría en español, concreta y en singular: "restaurante italiano", "vermut", "software de facturación", "ropa deportiva"); ' +
+            'kind ("local" si es un negocio con ubicación física donde acuden clientes; "product" si es una marca o producto que se compra; "online" si es un servicio, web o SaaS sin ubicación física); ' +
+            'city (solo si kind es "local" y la conoces; si no, cadena vacía); ' +
+            'website (dominio si lo conoces; si no, cadena vacía).',
         },
         { role: "user", content: input },
       ],
@@ -56,10 +60,19 @@ export async function identifyBusiness(input: string): Promise<IdentifiedBusines
     throw new Error("No se pudo identificar el negocio");
   }
 
+  const rawKind = String(parsed.kind ?? "").trim().toLowerCase();
+  const kind: BusinessKind = rawKind.startsWith("prod")
+    ? "product"
+    : rawKind === "online"
+    ? "online"
+    : "local";
+
   return {
     name,
     business_type,
-    city: String(parsed.city ?? "").trim() || undefined,
+    kind,
+    // La ciudad solo tiene sentido en negocios locales.
+    city: kind === "local" ? String(parsed.city ?? "").trim() || undefined : undefined,
     website: String(parsed.website ?? "").trim() || undefined,
   };
 }
@@ -88,6 +101,7 @@ export function toProject(b: IdentifiedBusiness): Project {
     id: "temp",
     name: b.name,
     business_type: b.business_type,
+    kind: b.kind,
     city: b.city,
     website: b.website,
   };

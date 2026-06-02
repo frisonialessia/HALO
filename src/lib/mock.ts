@@ -3,6 +3,9 @@
 // convincente, COSTE 0) y puede simular cualquier negocio (mockAudit) sin
 // gastar una sola llamada de API. Determinista por input → demos reproducibles.
 
+import { buildQueries } from "@/lib/queries";
+import type { BusinessKind } from "@/types";
+
 export interface MockProbe {
   query: string;
   appeared: boolean;
@@ -36,66 +39,51 @@ function seeded(str: string): () => number {
   };
 }
 
-// Las mismas plantillas que usa el motor real, para que los probes simulados
-// se vean idénticos a los reales.
-function queryTemplates(type: string, city?: string): string[] {
-  const where = city ? ` en ${city}` : "";
-  return [
-    `mejor ${type}${where}`,
-    `${type} recomendado${where}`,
-    `dónde ir a un buen ${type}${where}`,
-    `${type} bien valorado${where}`,
-    `top ${type}${where}`,
-    `${type} para una ocasión especial${where}`,
-    `${type} económico${where}`,
-    `${type} cerca de mí${where}`,
-    `qué ${type} vale la pena${where}`,
-    `${type} favorito de los locales${where}`,
-  ];
-}
-
-// Estima el tipo de negocio desde lo que pega el usuario (web/nombre) para que
-// la preview se sienta "suya" (vermutería, restaurante, clínica…) en vez de un
-// genérico "negocio local". Sin API: diccionario de señales. El análisis real
-// lo afina con precisión.
-const TYPE_HINTS: [RegExp, string][] = [
-  [/vermouth|vermut/, "vermut"],
-  [/ginebra|\bgin\b/, "ginebra"],
-  [/whisk/, "whisky"],
-  [/pizz/, "pizzería"],
-  [/sushi|ramen|japones|nikkei/, "restaurante japonés"],
-  [/taquer|tacos|mexican/, "restaurante mexicano"],
-  [/trattor|osteria|italian|pasta/, "restaurante italiano"],
-  [/burger|hamburgues/, "hamburguesería"],
-  [/restaur|asador|marisquer|tapas|bistro|brasserie|grill|cocina/, "restaurante"],
-  [/cafe|coffee|cafeter|brunch/, "cafetería"],
-  [/cocktail|cocteler|\bpub\b|cervec|\bbar\b/, "bar"],
-  [/panad|bakery|paste|reposter|croissant/, "panadería"],
-  [/helad|gelato|icecream/, "heladería"],
-  [/dental|odonto|dentist/, "clínica dental"],
-  [/clinic|medic|fisio|physio|psico|terap|salud|estetic|belleza|\bspa\b/, "clínica"],
-  [/veterinar|mascot/, "clínica veterinaria"],
-  [/peluqu|barber|salon|estilist|nails/, "peluquería"],
-  [/gym|gimnas|fitness|crossfit|yoga|pilates/, "gimnasio"],
-  [/hotel|hostal|hostel|aparthotel|alojamiento/, "hotel"],
-  [/inmobil|realestate|propiedad|vivienda/, "inmobiliaria"],
-  [/abogad|legal|\blaw\b|jurid|asesor|gestor/, "despacho de abogados"],
-  [/taller|mecanic|automo|neumatic/, "taller mecánico"],
-  [/floris|flores/, "floristería"],
-  [/joyer|relojer/, "joyería"],
-  [/librer/, "librería"],
-  [/academ|escuela|formacion|cursos|idiomas/, "academia"],
-  [/tienda|\bshop\b|store|boutique|moda|\bropa\b/, "tienda"],
-  [/agencia|marketing|publicidad|consultor|software|studio|estudio/, "agencia"],
+// Estima QUÉ es el negocio desde lo que pega el usuario (web/nombre): tipo +
+// naturaleza (local / producto / online), para que la preview use las mismas
+// búsquedas que el motor real. Sin API: diccionario de señales. El análisis
+// real lo afina con precisión.
+const TYPE_HINTS: [RegExp, string, BusinessKind][] = [
+  [/vermouth|vermut/, "vermut", "product"],
+  [/ginebra|\bgin\b/, "ginebra", "product"],
+  [/whisk/, "whisky", "product"],
+  [/\bvino\b|bodega/, "vino", "product"],
+  [/cerveza artesanal|craft beer/, "cerveza artesanal", "product"],
+  [/pizz/, "pizzería", "local"],
+  [/sushi|ramen|japones|nikkei/, "restaurante japonés", "local"],
+  [/taquer|tacos|mexican/, "restaurante mexicano", "local"],
+  [/trattor|osteria|italian|pasta/, "restaurante italiano", "local"],
+  [/burger|hamburgues/, "hamburguesería", "local"],
+  [/restaur|asador|marisquer|tapas|bistro|brasserie|grill|cocina/, "restaurante", "local"],
+  [/cafe|coffee|cafeter|brunch/, "cafetería", "local"],
+  [/cocktail|cocteler|\bpub\b|cervec|\bbar\b/, "bar", "local"],
+  [/panad|bakery|paste|reposter|croissant/, "panadería", "local"],
+  [/helad|gelato|icecream/, "heladería", "local"],
+  [/dental|odonto|dentist/, "clínica dental", "local"],
+  [/clinic|medic|fisio|physio|psico|terap|salud|estetic|belleza|\bspa\b/, "clínica", "local"],
+  [/veterinar|mascot/, "clínica veterinaria", "local"],
+  [/peluqu|barber|salon|estilist|nails/, "peluquería", "local"],
+  [/gym|gimnas|fitness|crossfit|yoga|pilates/, "gimnasio", "local"],
+  [/hotel|hostal|hostel|aparthotel|alojamiento/, "hotel", "local"],
+  [/inmobil|realestate|propiedad|vivienda/, "inmobiliaria", "local"],
+  [/abogad|legal|\blaw\b|jurid|asesor|gestor/, "despacho de abogados", "local"],
+  [/taller|mecanic|automo|neumatic/, "taller mecánico", "local"],
+  [/floris|flores/, "floristería", "local"],
+  [/joyer|relojer/, "joyería", "local"],
+  [/librer/, "librería", "local"],
+  [/academ|escuela|formacion|cursos|idiomas/, "academia", "local"],
+  [/tienda|\bshop\b|store|boutique|moda|\bropa\b/, "tienda online", "online"],
+  [/saas|software|\bapp\b|plataforma|\bcrm\b|\berp\b/, "software", "online"],
+  [/agencia|marketing|publicidad|consultor|studio|estudio/, "agencia", "online"],
 ];
 
-function guessType(input: string): string | undefined {
+function guessBusiness(input: string): { type?: string; kind: BusinessKind } {
   const t = input
     .toLowerCase()
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "");
-  for (const [re, type] of TYPE_HINTS) if (re.test(t)) return type;
-  return undefined;
+  for (const [re, type, kind] of TYPE_HINTS) if (re.test(t)) return { type, kind };
+  return { kind: "local" };
 }
 
 // Simula una auditoría para CUALQUIER negocio, sin API. Determinista por input.
@@ -112,14 +100,22 @@ export function mockAudit(
       .replace(/^https?:\/\//, "")
       .replace(/^www\./, "")
       .replace(/\/.*$/, "") || "Tu negocio";
+  const guess = guessBusiness(input);
   const biz = {
     name: business?.name || cleanName,
-    business_type: business?.business_type || guessType(input) || "negocio local",
+    business_type: business?.business_type || guess.type || "negocio local",
     city: business?.city,
     website: business?.website,
   };
 
-  const probes: MockProbe[] = queryTemplates(biz.business_type, biz.city).map((q) => {
+  const queries = buildQueries({
+    id: "temp",
+    name: biz.name,
+    business_type: biz.business_type,
+    kind: guess.kind,
+    city: biz.city,
+  });
+  const probes: MockProbe[] = queries.map((q) => {
     const appeared = rnd() < 0.4;
     return { query: q, appeared, position: appeared ? 1 + Math.floor(rnd() * 4) : undefined };
   });
