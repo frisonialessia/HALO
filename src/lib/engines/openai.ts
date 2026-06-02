@@ -71,7 +71,6 @@ export async function probeChatGPT(
     zone,
     answer,
     citations,
-    raw: data,
   });
 }
 

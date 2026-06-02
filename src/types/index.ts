@@ -25,7 +25,7 @@ export interface ProbeResult {
   position?: number;
   sentiment?: "positivo" | "neutro" | "negativo";
   cited_url?: boolean;
-  raw_response?: unknown;
+  answer?: string; // fragmento de la respuesta real del motor (lo que dijo la IA)
 }
 
 // Resultado agregado de una auditoría completa

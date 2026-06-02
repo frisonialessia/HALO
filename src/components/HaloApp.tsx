@@ -100,7 +100,7 @@ type AuditData = {
   business: { name: string; business_type: string; city?: string; website?: string };
   shareOfAnswer: number; // 0..1 → "X de 10"
   byEngine: Record<string, number>;
-  probes?: { query: string; appeared: boolean; position?: number }[];
+  probes?: { query: string; appeared: boolean; position?: number; answer?: string }[];
   demo?: boolean; // estado de ejemplo fijo (Osteria, escaparate)
   preview?: boolean; // simulación personalizada de la marca del visitante
 };
@@ -178,10 +178,9 @@ function pickAnswer(q: string): ReactNode {
 
 // Agrupa los probes por búsqueda única (con varios motores, una misma query
 // aparece una vez por motor): "apareces" si lo haces en AL MENOS un motor.
-function uniqueProbes(
-  probes: { query: string; appeared: boolean; position?: number }[]
-): { query: string; appeared: boolean; position?: number }[] {
-  const map = new Map<string, { query: string; appeared: boolean; position?: number }>();
+type ProbeLite = { query: string; appeared: boolean; position?: number; answer?: string };
+function uniqueProbes(probes: ProbeLite[]): ProbeLite[] {
+  const map = new Map<string, ProbeLite>();
   for (const p of probes) {
     const ex = map.get(p.query);
     if (!ex) {
@@ -189,9 +188,35 @@ function uniqueProbes(
     } else {
       ex.appeared = ex.appeared || p.appeared;
       if (p.position && (!ex.position || p.position < ex.position)) ex.position = p.position;
+      if (!ex.answer && p.answer) ex.answer = p.answer;
     }
   }
   return Array.from(map.values());
+}
+
+// Desplegable "Ver lo que dijo la IA": el fragmento real de la respuesta del motor.
+function AiAnswer({ text }: { text: string }) {
+  return (
+    <details style={{ marginTop: 8, paddingLeft: 30 }}>
+      <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: "var(--text-2)" }}>
+        Ver lo que dijo la IA
+      </summary>
+      <div
+        style={{
+          marginTop: 6,
+          fontSize: 12.5,
+          fontWeight: 500,
+          color: "var(--text-2)",
+          lineHeight: 1.55,
+          fontStyle: "italic",
+          borderLeft: "2px solid var(--gline)",
+          paddingLeft: 10,
+        }}
+      >
+        “{text}”
+      </div>
+    </details>
+  );
 }
 
 // Respuestas del chat con DATOS REALES (sin API), a partir del análisis:
@@ -1633,6 +1658,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
                       <div className="kd op">
                         Aún no te recomiendan aquí. Optimiza tu contenido para esta búsqueda.
                       </div>
+                      {p.answer && <AiAnswer text={p.answer} />}
                     </div>
                   ))}
                 </>
@@ -1656,6 +1682,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
                       <div className="kd">
                         {p.position ? `Apareces · puesto #${p.position}` : "Apareces en esta búsqueda"}
                       </div>
+                      {p.answer && <AiAnswer text={p.answer} />}
                     </div>
                   ))}
                 </>

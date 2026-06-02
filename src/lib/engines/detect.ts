@@ -77,9 +77,8 @@ export function buildProbe(opts: {
   zone?: string;
   answer: string;
   citations?: string[];
-  raw?: unknown;
 }): ProbeResult {
-  const { engine, project, query, zone, answer, citations = [], raw } = opts;
+  const { engine, project, query, zone, answer, citations = [] } = opts;
 
   const appeared = nameAppears(answer, project.name);
   const position = appeared ? estimatePosition(answer, project.name) : undefined;
@@ -88,6 +87,11 @@ export function buildProbe(opts: {
     ? citations.some((c) => c.toLowerCase().includes(stripUrl(project.website!)))
     : false;
 
+  // Fragmento de la respuesta real del motor (no el objeto completo): es lo que
+  // mostramos como "lo que dijo la IA".
+  const clean = answer.trim();
+  const snippet = clean.length > 300 ? clean.slice(0, 300).trimEnd() + "…" : clean;
+
   return {
     engine,
     query,
@@ -95,6 +99,6 @@ export function buildProbe(opts: {
     appeared,
     position,
     cited_url: citedUrl,
-    raw_response: raw,
+    answer: snippet || undefined,
   };
 }

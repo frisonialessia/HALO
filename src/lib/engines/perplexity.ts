@@ -56,6 +56,5 @@ export async function probePerplexity(
     zone,
     answer,
     citations: data.citations ?? [],
-    raw: data,
   });
 }
