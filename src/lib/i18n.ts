@@ -300,6 +300,12 @@ const D: Record<string, Entry> = {
   "dash.to": { en: "to", es: "a" },
   "dash.of10dot": { en: "of 10 ·", es: "de 10 ·" },
   "dash.measurements": { en: "measurements", es: "mediciones" },
+  "dash.competitors": { en: "Competitors", es: "Competencia" },
+  "dash.whoAIrecommends": { en: "who the AI recommends", es: "a quién recomienda la IA" },
+  "dash.competitorsFoot": {
+    en: "The businesses AI search recommends most across your searches.",
+    es: "Los negocios que la búsqueda con IA recomienda más en tus búsquedas.",
+  },
   "dash.whichRecommend": {
     en: "Which searches recommend you",
     es: "En qué búsquedas te recomiendan",

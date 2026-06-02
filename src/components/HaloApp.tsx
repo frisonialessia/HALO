@@ -225,6 +225,70 @@ function uniqueProbes(probes: ProbeLite[]): ProbeLite[] {
   return Array.from(map.values());
 }
 
+// Extrae los negocios que la IA nombra en sus respuestas (competidores REALES),
+// ordenados por nº de menciones. Heurística sobre el formato típico de los LLM:
+// nombres en **negrita** y primeros elementos de listas numeradas/con viñetas.
+const COMP_STOP = new Set([
+  "best", "top", "here", "this", "that", "with", "for", "and", "the", "your", "you", "note", "tip",
+  "mejor", "mejores", "aqui", "estos", "esta", "este", "con", "para", "una", "unos", "los", "las", "nota",
+  "google", "chatgpt", "perplexity", "gemini", "claude", "grok", "openai", "ai", "ia", "seo", "aeo", "llmo",
+]);
+function compNorm(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function compClean(raw: string): string {
+  return raw
+    .replace(/\*+/g, "")
+    .replace(/^[\s\-–—•*\d.)]+/, "")
+    .replace(/[\s:,.;–—-]+$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function compLikely(s: string): boolean {
+  if (s.length < 2 || s.length > 42) return false;
+  if (!/^[A-ZÁÉÍÓÚÑ0-9"'¿]/.test(s)) return false;
+  if (!/[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(s)) return false;
+  if (s.split(/\s+/).length > 5) return false;
+  const n = compNorm(s);
+  return !!n && !COMP_STOP.has(n);
+}
+function extractCompetitors(
+  probes: ProbeLite[],
+  ownName: string
+): { name: string; mentions: number }[] {
+  const own = compNorm(ownName);
+  const counts = new Map<string, { name: string; n: number }>();
+  for (const p of probes) {
+    const text = p.answer || "";
+    if (!text) continue;
+    const perAnswer = new Map<string, string>(); // clave normalizada → nombre legible
+    const add = (raw: string) => {
+      const name = compClean(raw);
+      if (!compLikely(name)) return;
+      const key = compNorm(name);
+      if (!key || key === own || key.includes(own) || own.includes(key)) return;
+      if (!perAnswer.has(key)) perAnswer.set(key, name);
+    };
+    for (const m of text.matchAll(/\*\*([^*\n]{2,42})\*\*/g)) add(m[1]);
+    for (const m of text.matchAll(/(?:^|\n)\s*(?:\d{1,2}[.)]|[-–—•*])\s+([^\n,:–—(]{2,42})/g)) add(m[1]);
+    for (const [key, name] of perAnswer) {
+      const ex = counts.get(key);
+      if (ex) ex.n++;
+      else counts.set(key, { name, n: 1 });
+    }
+  }
+  return [...counts.values()]
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 5)
+    .map((c) => ({ name: c.name, mentions: c.n }));
+}
+
 // Desplegable "Ver lo que dijo la IA": el fragmento real de la respuesta del motor.
 function AiAnswer({ text }: { text: string }) {
   const t = useT();
@@ -469,17 +533,32 @@ function answerReal(q: string, audit: AuditData, lang: Lang): ReactNode {
     );
   }
 
-  // Competencia / competition
+  // Competencia / competition — con datos reales extraídos de las respuestas
   if (/competencia|competidor|rival|l[ií]der|comparar|competit|compare/.test(s)) {
+    const comps = extractCompetitors(probes, name);
+    if (comps.length) {
+      const list = comps.slice(0, 3).map((c) => c.name).join(", ");
+      return es ? (
+        <>
+          En tus búsquedas, la IA recomienda sobre todo a <b>{list}</b>. Para alcanzarles, cubre las
+          búsquedas donde aún no apareces y genera tu texto en «Tu kit».
+        </>
+      ) : (
+        <>
+          In your searches, the AI mostly recommends <b>{list}</b>. To catch them, cover the searches
+          where you don&apos;t appear yet and generate your copy in &quot;Your kit&quot;.
+        </>
+      );
+    }
     return es ? (
       <>
-        El análisis de competidores está en camino. Por ahora me centro en TU cobertura real: apareces en{" "}
-        <b>{got.length} de {probes.length}</b> búsquedas. Subir eso es lo que te adelanta al resto.
+        Por ahora me centro en TU cobertura real: apareces en <b>{got.length} de {probes.length}</b>{" "}
+        búsquedas. Subir eso es lo que te adelanta al resto.
       </>
     ) : (
       <>
-        Competitor analysis is on the way. For now I focus on YOUR real coverage: you appear in{" "}
-        <b>{got.length} of {probes.length}</b> searches. Raising that is what puts you ahead.
+        For now I focus on YOUR real coverage: you appear in <b>{got.length} of {probes.length}</b>{" "}
+        searches. Raising that is what puts you ahead.
       </>
     );
   }
@@ -2216,6 +2295,7 @@ function TrendChart({ points }: { points: number[] }) {
 function DashReal({ audit }: { audit: AuditData }) {
   const t = useT();
   const probes = uniqueProbes(audit.probes ?? []);
+  const competitors = extractCompetitors(probes, audit.business.name);
   const total = probes.length;
   const appeared = probes.filter((p) => p.appeared).length;
   const score = Math.round(audit.shareOfAnswer * 10);
@@ -2335,6 +2415,32 @@ function DashReal({ audit }: { audit: AuditData }) {
           {t("dash.realFootB")}
         </div>
       </div>
+
+      {competitors.length > 0 && (
+        <div className="dcard" style={{ marginTop: 12 }}>
+          <div className="dcard-head">
+            <span className="dcard-title">{t("dash.competitors")}</span>
+            <span className="dcard-sub">{t("dash.whoAIrecommends")}</span>
+          </div>
+          <div className="complist">
+            {competitors.map((c, i) => (
+              <div className="comp" key={i}>
+                <span
+                  className="cname"
+                  style={{ width: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                >
+                  {c.name}
+                </span>
+                <div className="cbar">
+                  <i style={{ width: `${Math.round((c.mentions / competitors[0].mentions) * 100)}%` }} />
+                </div>
+                <span className="cval">{c.mentions}×</span>
+              </div>
+            ))}
+          </div>
+          <div className="dcard-foot">{t("dash.competitorsFoot")}</div>
+        </div>
+      )}
     </>
   );
 }
