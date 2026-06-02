@@ -59,7 +59,9 @@ function queryTemplates(type: string, city?: string): string[] {
 // genérico "negocio local". Sin API: diccionario de señales. El análisis real
 // lo afina con precisión.
 const TYPE_HINTS: [RegExp, string][] = [
-  [/vermouth|vermut/, "vermutería"],
+  [/vermouth|vermut/, "vermut"],
+  [/ginebra|\bgin\b/, "ginebra"],
+  [/whisk/, "whisky"],
   [/pizz/, "pizzería"],
   [/sushi|ramen|japones|nikkei/, "restaurante japonés"],
   [/taquer|tacos|mexican/, "restaurante mexicano"],

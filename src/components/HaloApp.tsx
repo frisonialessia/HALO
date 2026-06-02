@@ -200,7 +200,7 @@ function AiAnswer({ text }: { text: string }) {
   return (
     <details style={{ marginTop: 8, paddingLeft: 30 }}>
       <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: "var(--text-2)" }}>
-        Ver lo que dijo la IA
+        Ver respuesta de la IA
       </summary>
       <div
         style={{
@@ -261,10 +261,10 @@ function answerReal(q: string, audit: AuditData): ReactNode {
       <>
         Hoy te recomiendan <b>{score} de cada 10</b> veces ({got.length} de {probes.length} búsquedas).{" "}
         {score <= 3
-          ? "Hay mucho margen y sé por dónde empezar."
+          ? "Existe un amplio margen de mejora con un plan claro."
           : score <= 6
-          ? "Vas por buen camino; vamos a subirlo."
-          : "Dominas tu categoría; ahora a blindarla."}
+          ? "Posición intermedia, con recorrido por delante."
+          : "Posición sólida; el objetivo es consolidarla."}
       </>
     );
   }
@@ -302,8 +302,8 @@ function answerReal(q: string, audit: AuditData): ReactNode {
     if (positions.length === 0)
       return (
         <>
-          Todavía no apareces en un puesto destacado en las búsquedas que probé. En cuanto cubramos las que
-          faltan, empezarás a escalar.
+          Todavía no apareces en un puesto destacado en las búsquedas analizadas. Al cubrir las que
+          faltan, empezarás a posicionarte.
         </>
       );
     const best = Math.min(...positions);
@@ -321,14 +321,14 @@ function answerReal(q: string, audit: AuditData): ReactNode {
     if (missed.length === 0)
       return (
         <>
-          Apareces en todas las búsquedas que probé — ¡enhorabuena! El siguiente paso es reforzar tu
-          posición. Pídeme el texto optimizado para consolidarlo.
+          Apareces en todas las búsquedas analizadas. El siguiente paso es reforzar tu posición; puedo
+          generarte el texto optimizado para consolidarla.
         </>
       );
     return (
       <>
         No apareces en <b>{missed.length} de {probes.length}</b> búsquedas, por ejemplo: {ex(missed)}.
-        Empieza por ahí: pulsa <b>&quot;Generar texto optimizado para IA&quot;</b> en &quot;Tu kit&quot; — uso justo esas
+        Para cubrirlas, genera tu texto en <b>&quot;Tu kit&quot;</b>: se basa precisamente en esas
         búsquedas.
       </>
     );
@@ -340,7 +340,7 @@ function answerReal(q: string, audit: AuditData): ReactNode {
       <>
         Hoy te recomiendan en <b>{got.length} de {probes.length}</b> búsquedas
         {got.length ? <>, por ejemplo: {ex(got)}.</> : "."}
-        {missed.length ? <> Te quedan {missed.length} por conquistar.</> : null}
+        {missed.length ? <> Faltan {missed.length} por cubrir.</> : null}
       </>
     );
   }
@@ -751,15 +751,15 @@ export default function HaloApp() {
               </div>
             </div>
 
-            <h3 className="howto-h3">Las tres patas de la visibilidad en IA</h3>
+            <h3 className="howto-h3">Los tres pilares de la visibilidad en IA</h3>
             <div className="howto-grid">
               <div className="howto-step">
                 <span className="pill-tag">AEO</span>
                 <h3>Answer Engine Optimization</h3>
                 <p>
                   Aparecer en la respuesta cuando un cliente pregunta a la IA
-                  &quot;¿cuál es el mejor…?&quot;. Es el nuevo SEO: ya no basta con salir en
-                  Google, hay que salir en ChatGPT, Perplexity y Gemini.
+                  &quot;¿cuál es el mejor…?&quot;. La evolución del SEO: ya no basta con aparecer en
+                  Google; también es necesario aparecer en ChatGPT, Perplexity y Gemini.
                 </p>
               </div>
               <div className="howto-step">
@@ -780,6 +780,8 @@ export default function HaloApp() {
               </div>
             </div>
           </section>
+
+          <FloatingFab hidden={false} onClick={enterApp} />
         </div>
       )}
 
@@ -1162,12 +1164,12 @@ function listEngines(keys: string[]): string {
 // motiva incluso en un 0 de 10 (en vez de un seco "0 de cada 10").
 function scoreLine(score: number): string {
   if (score <= 0)
-    return "hoy la IA todavía no te recomienda en ninguna de las búsquedas que probé — y eso es justo lo que vamos a cambiar.";
+    return "actualmente la IA no te recomienda en ninguna de las búsquedas analizadas; es el punto de partida para mejorar.";
   if (score <= 3)
-    return `hoy te recomiendan ${score} de cada 10 veces. Hay mucho margen, y sé por dónde empezar.`;
+    return `hoy te recomiendan ${score} de cada 10 veces. Existe un amplio margen de mejora con un plan claro.`;
   if (score <= 6)
-    return `hoy te recomiendan ${score} de cada 10 veces. Vas por buen camino; vamos a subirlo.`;
-  return `hoy te recomiendan ${score} de cada 10 veces. Dominas tu categoría; ahora a blindarla.`;
+    return `hoy te recomiendan ${score} de cada 10 veces. Posición intermedia, con recorrido por delante.`;
+  return `hoy te recomiendan ${score} de cada 10 veces. Posición sólida; el objetivo es consolidarla y ampliarla.`;
 }
 
 // Texto de ejemplo para la demo (sin auditoría real): muestra el valor del
@@ -1644,13 +1646,13 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
                 <b style={{ color: "var(--text)" }}>
                   {gotProbes.length} de {realProbes.length}
                 </b>{" "}
-                búsquedas de clientes. Prioriza las que te faltan: son tu mayor oportunidad.
+                búsquedas de clientes. Prioriza las que aún no cubres: son tu mayor oportunidad.
               </div>
 
               {missedProbes.length > 0 && (
                 <>
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-2)", margin: "20px 0 12px" }}>
-                    Por conquistar · {missedProbes.length}
+                    Sin presencia · {missedProbes.length}
                   </div>
                   {missedProbes.map((p, i) => (
                     <div className="know" key={"m" + i}>
@@ -1670,7 +1672,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
               {gotProbes.length > 0 && (
                 <>
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-2)", margin: "20px 0 12px" }}>
-                    Ya te recomiendan · {gotProbes.length}
+                    Con presencia · {gotProbes.length}
                   </div>
                   {gotProbes.map((p, i) => (
                     <div className="know" key={"g" + i}>
@@ -2088,8 +2090,8 @@ function DashReal({ audit }: { audit: AuditData }) {
           </div>
           {trend.length < 2 ? (
             <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5, margin: "auto 0" }}>
-              Primera medición registrada. Vuelve a analizar tu negocio cada cierto tiempo
-              y aquí verás cómo sube tu visibilidad.
+              Primera medición registrada. Repite el análisis periódicamente para ver la
+              evolución de tu visibilidad.
             </div>
           ) : (
             <>
@@ -2184,7 +2186,7 @@ function HistoryView({
             className="glass"
             style={{ padding: 24, textAlign: "center", fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5 }}
           >
-            Aún no has analizado ningún negocio. Pega tu web y te medimos en segundos.
+            Todavía no has analizado ningún negocio. Introduce tu web para medir tu visibilidad.
           </div>
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
