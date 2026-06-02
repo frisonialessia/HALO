@@ -12,7 +12,11 @@ export function buildQueries(project: Project): string[] {
   // Plantillas genéricas que cubren las búsquedas más comunes.
   // En producción, estas se generarán dinámicamente con un LLM
   // según el sector, pero estas plantillas son un buen punto de partida.
-  return [
+  // Nº de búsquedas por análisis. Cada una = 1 llamada de pago por motor, así
+  // que es la palanca directa de coste: baja HALO_PROBE_COUNT para gastar menos
+  // (p. ej. 6). Por defecto 10.
+  const count = Number(process.env.HALO_PROBE_COUNT) || 10;
+  const queries = [
     `mejor ${business_type}${where}`,
     `${business_type} recomendado${where}`,
     `dónde ir a un buen ${business_type}${where}`,
@@ -24,6 +28,7 @@ export function buildQueries(project: Project): string[] {
     `qué ${business_type} vale la pena${where}`,
     `${business_type} favorito de los locales${where}`,
   ];
+  return queries.slice(0, count);
 }
 
 // Para Local Intelligence: las mismas queries pero por zona/barrio.

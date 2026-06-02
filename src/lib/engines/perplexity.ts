@@ -29,6 +29,7 @@ export async function probePerplexity(
     },
     body: JSON.stringify({
       model: "sonar",
+      max_tokens: 600,
       messages: [
         {
           role: "system",

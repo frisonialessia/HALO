@@ -51,6 +51,7 @@ export async function probeChatGPT(
         "Eres un asistente que recomienda negocios locales reales. " +
         "Responde como lo harías con un usuario normal, nombrando negocios concretos.",
       input: query,
+      max_output_tokens: 700,
       tools: [{ type: "web_search" }],
     }),
   });

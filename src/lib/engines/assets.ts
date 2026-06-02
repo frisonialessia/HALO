@@ -41,6 +41,7 @@ export async function generateAssets(input: AssetsInput): Promise<AiAssets> {
     },
     body: JSON.stringify({
       model: "sonar",
+      max_tokens: 900,
       messages: [
         {
           role: "system",

@@ -26,6 +26,7 @@ export async function identifyBusiness(input: string): Promise<IdentifiedBusines
     },
     body: JSON.stringify({
       model: "sonar",
+      max_tokens: 300,
       messages: [
         {
           role: "system",
