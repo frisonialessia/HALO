@@ -52,9 +52,11 @@ export async function POST(req: NextRequest) {
   let business;
   try {
     business = await identifyBusiness(parsed.data.input, lang);
-  } catch {
-    // La IA no reconoció el negocio (nuevo, pequeño o sin presencia online).
-    // No es un error: la landing pedirá los datos a mano y medimos igual.
+  } catch (err) {
+    // La IA no reconoció el negocio (nuevo, pequeño o sin presencia online) o
+    // el proveedor falló (clave ausente/limite). Logueamos el motivo para
+    // diagnóstico; el cliente cae a una simulación para no romperse.
+    console.error("[analyze] identify failed:", err);
     return NextResponse.json({ needManual: true });
   }
 
