@@ -41,7 +41,16 @@ function activeEngines(): { engine: Engine; probe: EngineProbe }[] {
 
 // Motores "escaparate" que SIEMPRE mostramos en el informe (la cobertura
 // multi-IA de Halo), en este orden. Los que no medimos de verdad se estiman.
-const SHOWCASE_ENGINES = ["chatgpt", "perplexity", "gemini", "claude", "grok"];
+const SHOWCASE_ENGINES = [
+  "chatgpt",
+  "perplexity",
+  "gemini",
+  "claude",
+  "grok",
+  "copilot",
+  "deepseek",
+  "meta",
+];
 
 // PRNG sembrado (determinista por negocio) → estimaciones estables y
 // reproducibles para los motores que aún no medimos de verdad.

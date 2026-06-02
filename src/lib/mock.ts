@@ -139,6 +139,9 @@ export function mockAudit(
       gemini: jitter(shareOfAnswer),
       claude: jitter(shareOfAnswer),
       grok: jitter(shareOfAnswer),
+      copilot: jitter(shareOfAnswer),
+      deepseek: jitter(shareOfAnswer),
+      meta: jitter(shareOfAnswer),
     },
     probes,
   };

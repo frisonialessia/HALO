@@ -220,6 +220,18 @@
   .eng-num.dim{color:#c9c4bf}
   .eng-add{color:#9a9c9f;font-size:13px;font-weight:600;cursor:pointer;border-right:none;display:flex;flex-direction:column;justify-content:flex-start}
 
+  /* grid de motores (escaparate multi-IA) */
+  .egrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .egc{background:var(--sand);border:1px solid var(--gline);border-radius:var(--r-card);padding:14px 15px}
+  .egc-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .egc-score{display:flex;align-items:baseline;gap:3px;margin-bottom:11px}
+  .egc-score b{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1}
+  .egc-score span{font-size:13px;font-weight:600;color:#9a9c9f}
+  .egc-bar{height:5px;background:#EEEBE6;border-radius:99px;overflow:hidden}
+  .egc-bar i{display:block;height:100%;background:var(--text);border-radius:99px}
+  @media(max-width:840px){.egrid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:600px){.egrid{grid-template-columns:repeat(2,1fr)}}
+
   /* listas tu/competencia y zonas — barras unificadas (6px, #C9C4BF) */
   .complist,.zonelist{display:flex;flex-direction:column;gap:11px}
   .comp,.zrow{display:flex;align-items:center;gap:12px}

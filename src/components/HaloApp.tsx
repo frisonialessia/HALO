@@ -1403,6 +1403,8 @@ const ENGINE_LABELS: Record<string, string> = {
   claude: "Claude",
   grok: "Grok",
   deepseek: "DeepSeek",
+  copilot: "Copilot",
+  meta: "Meta AI",
 };
 function listEngines(keys: string[], lang: Lang): string {
   const names = keys.map((k) => ENGINE_LABELS[k] ?? k);
@@ -2407,7 +2409,7 @@ function DashReal({ audit }: { audit: AuditData }) {
         </div>
       </div>
 
-      <div className="drow drow-top">
+      <div className="drow drow-two">
         <div className="dcard">
           <div className="dcard-head">
             <span className="dlbl">{t("dash.chosen")}</span>
@@ -2439,24 +2441,6 @@ function DashReal({ audit }: { audit: AuditData }) {
 
         <div className="dcard">
           <div className="dcard-head">
-            <span className="dcard-title">{t("dash.presenceByEngine")}</span>
-          </div>
-          <div className="complist">
-            {engines.map(([name, share]) => (
-              <div className="comp" key={name}>
-                <span className="cname">{ENGINE_LABELS[name] ?? name}</span>
-                <div className="cbar">
-                  <i style={{ width: `${Math.round(share * 100)}%` }} />
-                </div>
-                <span className="cval">{Math.round(share * 10)}/10</span>
-              </div>
-            ))}
-          </div>
-          <div className="dcard-foot">{t("dash.shareFoot")}</div>
-        </div>
-
-        <div className="dcard">
-          <div className="dcard-head">
             <span className="dcard-title">{t("dash.progress")}</span>
           </div>
           {trend.length < 2 ? (
@@ -2474,6 +2458,30 @@ function DashReal({ audit }: { audit: AuditData }) {
             </>
           )}
         </div>
+      </div>
+
+      <div className="dcard" style={{ marginBottom: 12 }}>
+        <div className="dcard-head">
+          <span className="dcard-title">{t("dash.presenceByEngine")}</span>
+          <span className="dcard-sub">
+            {engines.length} {t("dash.enginesMeasured")}
+          </span>
+        </div>
+        <div className="egrid">
+          {engines.map(([name, share]) => (
+            <div className="egc" key={name}>
+              <div className="egc-name">{ENGINE_LABELS[name] ?? name}</div>
+              <div className="egc-score">
+                <b>{Math.round(share * 10)}</b>
+                <span>/10</span>
+              </div>
+              <div className="egc-bar">
+                <i style={{ width: `${Math.round(share * 100)}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="dcard-foot">{t("dash.shareFoot")}</div>
       </div>
 
       <div className="dcard">
