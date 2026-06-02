@@ -76,6 +76,18 @@
   .landing-teaser .lt-text{background:#fff;border:1px solid var(--gline);border-radius:999px;padding:12px 18px;font-size:13px;font-weight:600;white-space:nowrap}
   .landing-teaser .lt-orb{width:52px;height:52px;--b:7px}
   @media(max-width:700px){.landing-teaser{display:none}}
+  .lhero{position:relative}
+
+  /* ===== CÓMO FUNCIONA ===== */
+  .howto{max-width:1000px;margin:0 auto;padding:30px 24px 110px;text-align:center}
+  .howto h2{font-size:34px;font-weight:800;letter-spacing:-.025em;margin-bottom:10px}
+  .howto-sub{font-size:15px;font-weight:500;color:var(--text-2);max-width:560px;margin:0 auto 42px;line-height:1.5}
+  .howto-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:left}
+  @media(max-width:760px){.howto-grid{grid-template-columns:1fr}}
+  .howto-step{background:#fff;border:1px solid var(--gline);border-radius:var(--r-card);padding:24px}
+  .howto-step .hs-num{width:30px;height:30px;border-radius:50%;background:var(--text);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:700;margin-bottom:16px}
+  .howto-step h3{font-size:16px;font-weight:700;margin-bottom:8px;letter-spacing:-.01em}
+  .howto-step p{font-size:13.5px;font-weight:500;color:var(--text-2);line-height:1.55}
 
   /* ===== LOADING ===== */
   .loadbox{text-align:center}

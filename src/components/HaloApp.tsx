@@ -454,13 +454,19 @@ export default function HaloApp() {
                 <AiIcon />
                 <AiIcon />
               </span>
-              <a>Cómo funciona</a>
-              <a>Precios</a>
+              <a
+                onClick={() =>
+                  document.getElementById("como")?.scrollIntoView({ behavior: "smooth" })
+                }
+              >
+                Cómo funciona
+              </a>
               <a className="enter" onClick={enterApp}>
                 Entrar
               </a>
             </div>
           </nav>
+          <div className="lhero">
           <div className="lstage">
             <div className="eyebrow">AEO • LLMO • Local Intelligence</div>
             <h1>
@@ -492,6 +498,8 @@ export default function HaloApp() {
               <b>{SECTORS[sectorIdx]}</b>
             </div>
             <div className="ltrust">
+              <span>Sin registro</span>
+              <span className="sep" />
               <span>Resultados en segundos</span>
               <span className="sep" />
               <span
@@ -506,6 +514,40 @@ export default function HaloApp() {
             <span className="lt-text">Esto está diciendo ChatGPT sobre tu negocio</span>
             <Orb className="lt-orb" />
           </div>
+          </div>
+
+          <section className="howto" id="como">
+            <h2>Cómo funciona</h2>
+            <p className="howto-sub">
+              Sin registro y en segundos. Esto es lo que Halo hace con tu negocio:
+            </p>
+            <div className="howto-grid">
+              <div className="howto-step">
+                <div className="hs-num">1</div>
+                <h3>Pegas tu negocio</h3>
+                <p>
+                  Tu web, tu Google Maps o tu nombre. Identificamos quién eres
+                  automáticamente, sin formularios.
+                </p>
+              </div>
+              <div className="howto-step">
+                <div className="hs-num">2</div>
+                <h3>Medimos tu presencia real</h3>
+                <p>
+                  Preguntamos a los buscadores con IA (ChatGPT, Perplexity…) como lo
+                  haría un cliente, y vemos cuántas veces te recomiendan.
+                </p>
+              </div>
+              <div className="howto-step">
+                <div className="hs-num">3</div>
+                <h3>Te damos el plan y el texto</h3>
+                <p>
+                  Ves en qué búsquedas apareces y generas el texto optimizado, listo
+                  para copiar en tu web y tu ficha de Google.
+                </p>
+              </div>
+            </div>
+          </section>
         </div>
       )}
 
@@ -700,6 +742,18 @@ function listEngines(keys: string[]): string {
   const names = keys.map((k) => ENGINE_LABELS[k] ?? k);
   if (names.length <= 1) return names[0] ?? "Perplexity";
   return names.slice(0, -1).join(", ") + " y " + names[names.length - 1];
+}
+
+// Frase de apertura del informe según la puntuación: honesta y con un tono que
+// motiva incluso en un 0 de 10 (en vez de un seco "0 de cada 10").
+function scoreLine(score: number): string {
+  if (score <= 0)
+    return "hoy la IA todavía no te recomienda en ninguna de las búsquedas que probé — y eso es justo lo que vamos a cambiar.";
+  if (score <= 3)
+    return `hoy te recomiendan ${score} de cada 10 veces. Hay mucho margen, y sé por dónde empezar.`;
+  if (score <= 6)
+    return `hoy te recomiendan ${score} de cada 10 veces. Vas por buen camino; vamos a subirlo.`;
+  return `hoy te recomiendan ${score} de cada 10 veces. Dominas tu categoría; ahora a blindarla.`;
 }
 
 // Texto de ejemplo para la demo (sin auditoría real): muestra el valor del
@@ -969,7 +1023,7 @@ function HaloView({ audit }: { audit: AuditData | null }) {
           think: "Analizando tu negocio…",
           text: (
             <>
-              Analicé la presencia de <b>{bizName}</b> en {enginesLabel}: hoy te recomiendan <b>{score} de cada 10 veces</b>. Tengo acciones concretas para que te elijan más. Si tienes dudas sobre AEO o cómo funciona esto, pregúntame primero; si no, empezamos por la de mayor impacto.
+              Analicé la presencia de <b>{bizName}</b> en {enginesLabel}: {scoreLine(score)} Tengo acciones concretas para que te elijan más. Si tienes dudas sobre AEO o cómo funciona esto, pregúntame primero; si no, empezamos por la de mayor impacto.
             </>
           ),
         },
