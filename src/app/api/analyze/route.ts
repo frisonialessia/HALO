@@ -3,6 +3,7 @@ import { z } from "zod";
 import { identifyBusiness, toProject } from "@/lib/engines/identify";
 import { runAudit } from "@/lib/audit";
 import { enforceRateLimit } from "@/lib/ratelimit";
+import { cacheKey, getCached, setCached } from "@/lib/cache";
 
 // POST /api/analyze  — entrada pública de la landing.
 // Recibe lo que el usuario pega (web, nombre, Google Maps…), identifica el
@@ -40,6 +41,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Caché global: si ese negocio ya se analizó hace poco, lo servimos sin pagar.
+  const key = cacheKey("analyze", parsed.data.input);
+  const hit = await getCached<{ business: unknown }>(key);
+  if (hit) return NextResponse.json(hit);
+
   let business;
   try {
     business = await identifyBusiness(parsed.data.input);
@@ -51,7 +57,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await runAudit(toProject(business));
-    return NextResponse.json({ business, ...result });
+    const payload = { business, ...result };
+    await setCached(key, payload);
+    return NextResponse.json(payload);
   } catch (err) {
     console.error("Error en /api/analyze:", err);
     return NextResponse.json(

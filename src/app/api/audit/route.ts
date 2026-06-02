@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { runAudit } from "@/lib/audit";
 import { enforceRateLimit } from "@/lib/ratelimit";
+import { cacheKey, getCached, setCached } from "@/lib/cache";
 import type { Project } from "@/types";
 
 // POST /api/audit
@@ -57,8 +58,13 @@ export async function POST(req: NextRequest) {
     website: parsed.data.website,
   };
 
+  const key = cacheKey("audit", `${project.name}|${project.business_type}|${project.city ?? ""}`);
+  const hit = await getCached(key);
+  if (hit) return NextResponse.json(hit);
+
   try {
     const result = await runAudit(project);
+    await setCached(key, result);
     return NextResponse.json(result);
   } catch (err) {
     console.error("Error en auditoría:", err);
