@@ -105,23 +105,13 @@ type AiAssets = {
 const SECTORS = ["sector.0", "sector.1", "sector.2", "sector.3"];
 const LOAD_STEPS = ["load.s1", "load.s2", "load.s3", "load.s4"];
 
-const KNOW_ITEMS: { ok: boolean; t: string; d: string; op?: boolean }[] = [
-  { ok: true, t: "Qué tipo de negocio eres", d: "Restaurante italiano · pasta artesanal. Lo tienen claro." },
-  { ok: true, t: "Dónde estás", d: "Centro de Milán, cerca del Duomo. Bien reconocido." },
-  { ok: true, t: "Tus platos estrella", d: "Pasta fresca, risotto. Los mencionan." },
-  {
-    ok: false,
-    op: true,
-    t: "Tus horarios",
-    d: "Todavía no saben cuándo abres. Espacio para aparecer en más búsquedas.",
-  },
-  {
-    ok: false,
-    op: true,
-    t: "Cómo reservar",
-    d: "Aún no hay forma clara de reservar. Oportunidad de ganar reservas.",
-  },
-  { ok: true, t: "Opiniones de clientes", d: "Buenas reseñas recientes. Las usan a tu favor." },
+const KNOW_ITEMS: { ok: boolean; tk: string; dk: string; op?: boolean }[] = [
+  { ok: true, tk: "know.0.t", dk: "know.0.d" },
+  { ok: true, tk: "know.1.t", dk: "know.1.d" },
+  { ok: true, tk: "know.2.t", dk: "know.2.d" },
+  { ok: false, op: true, tk: "know.3.t", dk: "know.3.d" },
+  { ok: false, op: true, tk: "know.4.t", dk: "know.4.d" },
+  { ok: true, tk: "know.5.t", dk: "know.5.d" },
 ];
 
 function pickAnswer(q: string, lang: Lang): ReactNode {
@@ -486,11 +476,11 @@ function answerReal(q: string, audit: AuditData, lang: Lang): ReactNode {
 
 // Dashboard data
 const COMPETITORS: { n: string; v: number; score: string; you?: boolean }[] = [
-  { n: "Líder de zona", v: 60, score: "6/10" },
-  { n: "Competidor 2", v: 50, score: "5/10" },
-  { n: "Tu negocio", v: 30, score: "3/10", you: true },
-  { n: "Competidor 4", v: 30, score: "3/10" },
-  { n: "Competidor 5", v: 20, score: "2/10" },
+  { n: "dash.comp.leader", v: 60, score: "6/10" },
+  { n: "dash.comp.c2", v: 50, score: "5/10" },
+  { n: "app.yourBiz", v: 30, score: "3/10", you: true },
+  { n: "dash.comp.c4", v: 30, score: "3/10" },
+  { n: "dash.comp.c5", v: 20, score: "2/10" },
 ];
 
 const ENGINES: { name: string; n?: number; dim?: boolean }[] = [
@@ -509,18 +499,18 @@ const ZONES: { n: string; v: number }[] = [
   { n: "San Siro", v: 8 },
 ];
 
-const KEYWORDS: { yes: boolean; t: string }[] = [
-  { yes: true, t: '"mejor sitio en el centro de Milán"' },
-  { yes: true, t: '"recomendado cerca del Duomo"' },
-  { yes: false, t: '"abierto el domingo en Milán"' },
-  { yes: false, t: '"opciones para grupos en Navigli"' },
+const KEYWORDS: { yes: boolean; k: string }[] = [
+  { yes: true, k: "dash.kw.0" },
+  { yes: true, k: "dash.kw.1" },
+  { yes: false, k: "dash.kw.2" },
+  { yes: false, k: "dash.kw.3" },
 ];
 
 const IMPACT: { eng: string; v: number; d: string }[] = [
-  { eng: "ChatGPT", v: 62, d: "Platos indexados" },
-  { eng: "Perplexity", v: 74, d: "Citado con reseñas" },
-  { eng: "Gemini", v: 48, d: "Falta ubicación" },
-  { eng: "Claude", v: 55, d: "En progreso" },
+  { eng: "ChatGPT", v: 62, d: "dash.imp.0" },
+  { eng: "Perplexity", v: 74, d: "dash.imp.1" },
+  { eng: "Gemini", v: 48, d: "dash.imp.2" },
+  { eng: "Claude", v: 55, d: "dash.imp.3" },
 ];
 
 // ============== Sparkline (canvas, 8 puntos, línea negra) ==============
@@ -671,7 +661,7 @@ export default function HaloApp() {
         setView("set");
         return;
       }
-      if (!res.ok) throw new Error(data?.error || "No se pudo analizar");
+      if (!res.ok) throw new Error(data?.error || tr("err.analyze"));
       setLoadDone(LOAD_STEPS.length - 1);
       const auditData = data as AuditData;
       setAudit(auditData);
@@ -680,7 +670,7 @@ export default function HaloApp() {
       setView("halo");
     } catch (e) {
       stop();
-      setAuditErr(e instanceof Error ? e.message : "No se pudo analizar");
+      setAuditErr(e instanceof Error ? e.message : tr("err.analyze"));
       setScreen("landing");
     }
   }
@@ -698,7 +688,7 @@ export default function HaloApp() {
     name = name.trim();
     business_type = business_type.trim();
     if (!name || !business_type) {
-      setAuditErr("Pon al menos el nombre y el tipo de negocio.");
+      setAuditErr(tr("err.nameType"));
       return;
     }
     setAnalyzingLabel(name);
@@ -714,7 +704,7 @@ export default function HaloApp() {
       });
       const data = await res.json();
       stop();
-      if (!res.ok) throw new Error(data?.error || "No se pudo analizar");
+      if (!res.ok) throw new Error(data?.error || tr("err.analyze"));
       setLoadDone(LOAD_STEPS.length - 1);
       const auditData = {
         business: { name, business_type, city: city.trim() || undefined },
@@ -726,7 +716,7 @@ export default function HaloApp() {
       setView("halo");
     } catch (e) {
       stop();
-      setAuditErr(e instanceof Error ? e.message : "No se pudo analizar");
+      setAuditErr(e instanceof Error ? e.message : tr("err.analyze"));
       setScreen("app");
       setView("set");
     }
@@ -1298,7 +1288,7 @@ function scoreLine(score: number, lang: Lang): string {
 
 // Texto de ejemplo para la demo (sin auditoría real): muestra el valor del
 // generador sin gastar la API de pago. Coherente con el resto de datos demo.
-const SAMPLE_ASSETS: AiAssets = {
+const SAMPLE_ASSETS_ES: AiAssets = {
   description:
     "Osteria Vista es una trattoría italiana en el centro de Madrid especializada en pasta fresca artesanal y pizza al horno de leña. Ambiente acogedor ideal para cenas en pareja y grupos, con platos vegetarianos y una cuidada carta de vinos italianos. Abierta cada día para comidas y cenas, con reserva online.",
   faqs: [
@@ -1329,6 +1319,42 @@ const SAMPLE_ASSETS: AiAssets = {
     "Consigue reseñas que mencionen tus platos estrella; la IA las usa para recomendarte.",
   ],
 };
+
+const SAMPLE_ASSETS_EN: AiAssets = {
+  description:
+    "Osteria Vista is an Italian trattoria in central Madrid specializing in artisanal fresh pasta and wood-fired pizza. A cozy atmosphere ideal for couples and groups, with vegetarian dishes and a curated list of Italian wines. Open daily for lunch and dinner, with online booking.",
+  faqs: [
+    {
+      q: "What's the best Italian restaurant in Madrid?",
+      a: "Osteria Vista stands out for its artisanal fresh pasta and wood-fired pizza, in a cozy atmosphere highly rated by locals.",
+    },
+    {
+      q: "Where can I have fresh pasta for dinner in Madrid?",
+      a: "At Osteria Vista, in central Madrid, the pasta is made fresh by hand every day.",
+    },
+    {
+      q: "Which Italian in Madrid takes online reservations?",
+      a: "Osteria Vista lets you book a table online and opens for lunch and dinner every day.",
+    },
+    {
+      q: "Are there Italians with vegetarian options in Madrid?",
+      a: "Yes, Osteria Vista offers several vegetarian dishes alongside its pasta and pizza menu.",
+    },
+    {
+      q: "Where to go for a couples' dinner in Madrid?",
+      a: "Osteria Vista has an intimate, cozy atmosphere, ideal for a couples' dinner with homemade Italian cooking.",
+    },
+  ],
+  tips: [
+    "Complete your Google profile with hours, photos and a description: it's the #1 source AI assistants read.",
+    "Publish an FAQ section on your website with your customers' real questions.",
+    "Get reviews that mention your signature dishes; the AI uses them to recommend you.",
+  ],
+};
+
+function sampleAssets(lang: Lang): AiAssets {
+  return lang === "es" ? SAMPLE_ASSETS_ES : SAMPLE_ASSETS_EN;
+}
 
 const assetBoxStyle: CSSProperties = {
   background: "var(--sand)",
@@ -1430,6 +1456,8 @@ function buildSchema(
 }
 
 function AssetsSection({ audit }: { audit: AuditData | null }) {
+  const t = useT();
+  const { lang } = useLang();
   const [assets, setAssets] = useState<AiAssets | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -1444,7 +1472,7 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
       if (!audit || audit.demo || audit.preview) {
         // Demo o preview simulada: ejemplo instantáneo, sin API de pago.
         await new Promise((r) => setTimeout(r, 850));
-        setAssets(SAMPLE_ASSETS);
+        setAssets(sampleAssets(lang));
         return;
       }
       const missedQueries = Array.from(
@@ -1462,10 +1490,10 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "No pudimos generar el texto");
+      if (!res.ok) throw new Error(data?.error || t("kit.errGen"));
       setAssets(data as AiAssets);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "No pudimos generar el texto");
+      setErr(e instanceof Error ? e.message : t("kit.errGen"));
     } finally {
       setLoading(false);
     }
@@ -1485,7 +1513,7 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
   function submitAndRun() {
     const value = email.trim();
     if (!isValidEmail(value)) {
-      setEmailErr("Pon un email válido para enviarte tu kit.");
+      setEmailErr(t("kit.invalidEmail"));
       return;
     }
     setEmailErr("");
@@ -1500,15 +1528,14 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
   }
 
   const schema = assets
-    ? buildSchema(audit?.business ?? { name: "Tu negocio" }, assets.description, assets.faqs)
+    ? buildSchema(audit?.business ?? { name: t("app.yourBiz") }, assets.description, assets.faqs)
     : "";
 
   return (
     <div style={{ marginTop: 26, paddingTop: 22, borderTop: "1px solid var(--gline)" }}>
-      <h2>Tu kit para que la IA te recomiende</h2>
+      <h2>{t("kit.title")}</h2>
       <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5, margin: "-8px 0 16px" }}>
-        Texto listo para copiar en tu web y tu ficha de Google, pensado para las
-        búsquedas donde hoy no apareces.
+        {t("kit.sub")}
       </p>
 
       {!assets && !gate && (
@@ -1529,18 +1556,18 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
             opacity: loading ? 0.7 : 1,
           }}
         >
-          {loading ? "Generando tu texto…" : "Generar texto optimizado para IA"}
+          {loading ? t("kit.generating") : t("kit.generateBtn")}
         </button>
       )}
 
       {!assets && gate && (
         <div style={{ display: "grid", gap: 8, maxWidth: 420 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5 }}>
-            Te enviamos tu kit optimizado al correo y te avisamos de mejoras. Sin spam.
+            {t("kit.gateText")}
           </div>
           <input
             type="email"
-            placeholder="tu@email.com"
+            placeholder={t("unlock.emailPh")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onKeyDown={(e) => {
@@ -1569,7 +1596,7 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Generando…" : "Generar mi kit →"}
+            {loading ? t("kit.generatingShort") : t("kit.generateMine")}
           </button>
         </div>
       )}
@@ -1585,7 +1612,7 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
           {assets.description && (
             <div style={assetBoxStyle}>
               <div style={assetHeadStyle}>
-                <span>Descripción optimizada</span>
+                <span>{t("kit.optDesc")}</span>
                 <CopyButton text={assets.description} />
               </div>
               <p style={{ margin: 0, fontSize: 13.5, fontWeight: 500, color: "var(--text)", lineHeight: 1.6 }}>
@@ -1597,7 +1624,7 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
           {assets.faqs.length > 0 && (
             <div style={assetBoxStyle}>
               <div style={assetHeadStyle}>
-                <span>Preguntas frecuentes (FAQ)</span>
+                <span>{t("kit.faq")}</span>
                 <CopyButton text={assets.faqs.map((f) => `${f.q}\n${f.a}`).join("\n\n")} />
               </div>
               <div style={{ display: "grid", gap: 12 }}>
@@ -1618,14 +1645,14 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
           {assets.tips.length > 0 && (
             <div style={assetBoxStyle}>
               <div style={assetHeadStyle}>
-                <span>Acciones recomendadas</span>
+                <span>{t("kit.actions")}</span>
               </div>
               <div style={{ display: "grid", gap: 10 }}>
-                {assets.tips.map((t, i) => (
+                {assets.tips.map((tip, i) => (
                   <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <span style={{ flexShrink: 0, width: 5, height: 5, borderRadius: "50%", background: "var(--deep)", marginTop: 7 }} />
                     <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text)", lineHeight: 1.5 }}>
-                      {t}
+                      {tip}
                     </span>
                   </div>
                 ))}
@@ -1635,12 +1662,11 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
 
           <div style={assetBoxStyle}>
             <div style={assetHeadStyle}>
-              <span>Datos estructurados (Schema)</span>
+              <span>{t("kit.schema")}</span>
               <CopyButton text={schema} />
             </div>
             <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5, marginBottom: 10 }}>
-              Pégalo en el HTML de tu web (en la cabecera). Hace que la IA y Google
-              entiendan tu negocio al instante.
+              {t("kit.schemaHint")}
             </div>
             <pre
               style={{
@@ -1679,7 +1705,7 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
               fontFamily: "inherit",
             }}
           >
-            {loading ? "Generando…" : "Regenerar"}
+            {loading ? t("kit.generatingShort") : t("kit.regenerate")}
           </button>
         </div>
       )}
@@ -1830,9 +1856,9 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
                         </svg>
                       )}
                     </span>
-                    {k.t}
+                    {t(k.tk)}
                   </div>
-                  <div className={`kd ${k.op ? "op" : ""}`}>{k.d}</div>
+                  <div className={`kd ${k.op ? "op" : ""}`}>{t(k.dk)}</div>
                 </div>
               ))}
             </>
@@ -1919,16 +1945,17 @@ function DashView({ audit }: { audit: AuditData | null }) {
 // Dashboard de la DEMO (datos de ejemplo). Escaparate completo de lo que Halo
 // llegará a medir; en un análisis real solo enseñamos lo verificable.
 function DashDemo({ score }: { score: number }) {
+  const t = useT();
   return (
     <>
       <div className="dhead">
         <div>
-          <div className="dhead-sub">Tu negocio · Milán · en directo</div>
-          <h1 className="dhead-title">Visibilidad ante la IA</h1>
+          <div className="dhead-sub">{t("dash.demoSub")}</div>
+          <h1 className="dhead-title">{t("dash.title")}</h1>
         </div>
         <div className="dhead-actions">
           <button className="dbtn-ghost" type="button">
-            Últimos 7 días ▾
+            {t("dash.last7")}
           </button>
         </div>
       </div>
@@ -1937,42 +1964,42 @@ function DashDemo({ score }: { score: number }) {
       <div className="drow drow-top">
         <div className="dcard">
           <div className="dcard-head">
-            <span className="dlbl">Cuánto te eligen</span>
-            <span className="dpill-up">+1 vs. semana pasada</span>
+            <span className="dlbl">{t("dash.chosen")}</span>
+            <span className="dpill-up">{t("dash.vsLastWeek")}</span>
           </div>
           <div className="hero-num">
             <span className="accent-grad">{score}</span>
             <span className="hero-den">/ 10</span>
-            <span className="hero-cap">respuestas te mencionan</span>
+            <span className="hero-cap">{t("dash.mention")}</span>
           </div>
           <div className="hero-stats">
             <div>
               <div className="hs-n">#3</div>
-              <div className="hs-l">en tu zona</div>
+              <div className="hs-l">{t("dash.inArea")}</div>
             </div>
             <div>
               <div className="hs-n">142</div>
-              <div className="hs-l">consultas/semana</div>
+              <div className="hs-l">{t("dash.queriesWk")}</div>
             </div>
             <div>
               <div className="hs-n">4</div>
-              <div className="hs-l">motores activos</div>
+              <div className="hs-l">{t("dash.activeEngines")}</div>
             </div>
           </div>
         </div>
 
         <div className="dcard">
-          <span className="dlbl">Tendencia · 8 semanas</span>
+          <span className="dlbl">{t("dash.trend8")}</span>
           <div className="spark-wrap">
             <SparkLine />
           </div>
           <div className="dcard-foot">
-            De 1.8 a <b>3.0</b> de media
+            {t("dash.fromAvgA")} <b>3.0</b> {t("dash.fromAvgB")}
           </div>
         </div>
 
         <div className="dcard">
-          <span className="dlbl">Salud del perfil</span>
+          <span className="dlbl">{t("dash.health")}</span>
           <div className="health-num">
             <span className="accent-grad">68%</span>
           </div>
@@ -1980,7 +2007,7 @@ function DashDemo({ score }: { score: number }) {
             <i style={{ width: "68%" }} />
           </div>
           <div className="dcard-foot">
-            Faltan <b>horarios</b> y <b>reservas</b>
+            {t("dash.missing")} <b>{t("dash.hours")}</b> {t("dash.and")} <b>{t("dash.reservations")}</b>
           </div>
         </div>
       </div>
@@ -1988,8 +2015,8 @@ function DashDemo({ score }: { score: number }) {
       {/* Presencia por motor */}
       <div className="dcard" style={{ marginBottom: 14 }}>
         <div className="dcard-head">
-          <span className="dcard-title">Presencia por motor</span>
-          <span className="dlink">Conectar más →</span>
+          <span className="dcard-title">{t("dash.presenceByEngine")}</span>
+          <span className="dlink">{t("dash.connectMore")}</span>
         </div>
         <div className="engine-grid">
           {ENGINES.filter((e) => !e.dim).map((e) => (
@@ -2016,13 +2043,13 @@ function DashDemo({ score }: { score: number }) {
       <div className="drow drow-two">
         <div className="dcard">
           <div className="dcard-head">
-            <span className="dcard-title">Tú y tu competencia</span>
-            <span className="dcard-sub">Top 5 · tu zona</span>
+            <span className="dcard-title">{t("dash.youVsComp")}</span>
+            <span className="dcard-sub">{t("dash.top5area")}</span>
           </div>
           <div className="complist">
             {COMPETITORS.map((c, i) => (
               <div className={`comp ${c.you ? "you" : ""}`} key={i}>
-                <span className="cname">{c.n}</span>
+                <span className="cname">{t(c.n)}</span>
                 <div className="cbar">
                   <i className={c.you ? "youbar" : ""} style={{ width: `${c.v}%` }} />
                 </div>
@@ -2031,14 +2058,14 @@ function DashDemo({ score }: { score: number }) {
             ))}
           </div>
           <div className="dcard-foot">
-            Oportunidad de optimización: <b>2 puntos</b> para alcanzar al líder de tu zona.
+            {t("dash.optOppA")} <b>{t("dash.points")}</b> {t("dash.optOppB")}
           </div>
         </div>
 
         <div className="dcard">
           <div className="dcard-head">
-            <span className="dcard-title">Por zona de Milán</span>
-            <span className="dlink">Ver todo →</span>
+            <span className="dcard-title">{t("dash.byAreaMilan")}</span>
+            <span className="dlink">{t("dash.seeAll")}</span>
           </div>
           <div className="zonelist">
             {ZONES.map((z) => {
@@ -2055,7 +2082,7 @@ function DashDemo({ score }: { score: number }) {
             })}
           </div>
           <div className="dcard-foot">
-            Tu mayor oportunidad: <b>San Siro</b> y <b>Lambrate</b>
+            {t("dash.bigOppA")} <b>San Siro</b> {t("dash.and")} <b>Lambrate</b>
           </div>
         </div>
       </div>
@@ -2064,14 +2091,14 @@ function DashDemo({ score }: { score: number }) {
       <div className="drow drow-two">
         <div className="dcard">
           <div className="dcard-head">
-            <span className="dcard-title">Lo que la gente busca</span>
-            <span className="dcard-sub">Preguntas reales a la IA</span>
+            <span className="dcard-title">{t("dash.peopleSearch")}</span>
+            <span className="dcard-sub">{t("dash.realQuestions")}</span>
           </div>
           <div className="kwchips">
             {KEYWORDS.map((k, i) => (
               <div className={`kwchip ${k.yes ? "yes" : "soon"}`} key={i}>
-                <span>{k.t}</span>
-                <b>{k.yes ? "Apareces" : "Aún no"}</b>
+                <span>{t(k.k)}</span>
+                <b>{k.yes ? t("dash.youAppear") : t("dash.notYet")}</b>
               </div>
             ))}
           </div>
@@ -2079,8 +2106,8 @@ function DashDemo({ score }: { score: number }) {
 
         <div className="dcard">
           <div className="dcard-head">
-            <span className="dcard-title">Tu impacto en la IA</span>
-            <span className="dcard-sub">qué mejoró Halo</span>
+            <span className="dcard-title">{t("dash.yourImpact")}</span>
+            <span className="dcard-sub">{t("dash.whatImproved")}</span>
           </div>
           <div className="impact-list">
             {IMPACT.map((m) => (
@@ -2089,12 +2116,12 @@ function DashDemo({ score }: { score: number }) {
                 <div className="imp-bar">
                   <i style={{ width: `${m.v}%` }} />
                 </div>
-                <span className="imp-d">{m.d}</span>
+                <span className="imp-d">{t(m.d)}</span>
               </div>
             ))}
           </div>
           <div className="dcard-foot">
-            Tu visibilidad media subió <b>+18%</b> desde que activaste Halo.
+            {t("dash.visUpA")} <b>+18%</b> {t("dash.visUpB")}
           </div>
         </div>
       </div>
@@ -2131,6 +2158,7 @@ function TrendChart({ points }: { points: number[] }) {
 
 // ============== Vista DASHBOARD (datos reales del análisis) ==============
 function DashReal({ audit }: { audit: AuditData }) {
+  const t = useT();
   const probes = uniqueProbes(audit.probes ?? []);
   const total = probes.length;
   const appeared = probes.filter((p) => p.appeared).length;
@@ -2152,45 +2180,45 @@ function DashReal({ audit }: { audit: AuditData }) {
         <div>
           <div className="dhead-sub">
             {audit.business.name}
-            {city} · en directo
+            {city} · {t("dash.live")}
           </div>
-          <h1 className="dhead-title">Visibilidad ante la IA</h1>
+          <h1 className="dhead-title">{t("dash.title")}</h1>
         </div>
       </div>
 
       <div className="drow drow-top">
         <div className="dcard">
           <div className="dcard-head">
-            <span className="dlbl">Cuánto te eligen</span>
+            <span className="dlbl">{t("dash.chosen")}</span>
           </div>
           <div className="hero-num">
             <span className="accent-grad">{score}</span>
             <span className="hero-den">/ 10</span>
-            <span className="hero-cap">respuestas te mencionan</span>
+            <span className="hero-cap">{t("dash.mention")}</span>
           </div>
           <div className="hero-stats">
             <div>
               <div className="hs-n">
                 {appeared}/{total}
               </div>
-              <div className="hs-l">búsquedas con presencia</div>
+              <div className="hs-l">{t("dash.searchesPresence")}</div>
             </div>
             <div>
               <div className="hs-n">{engines.length}</div>
               <div className="hs-l">
-                {engines.length === 1 ? "motor medido" : "motores medidos"}
+                {engines.length === 1 ? t("dash.engineMeasured") : t("dash.enginesMeasured")}
               </div>
             </div>
             <div>
               <div className="hs-n">{bestPos ? `#${bestPos}` : "—"}</div>
-              <div className="hs-l">mejor posición</div>
+              <div className="hs-l">{t("dash.bestPos")}</div>
             </div>
           </div>
         </div>
 
         <div className="dcard">
           <div className="dcard-head">
-            <span className="dcard-title">Presencia por motor</span>
+            <span className="dcard-title">{t("dash.presenceByEngine")}</span>
           </div>
           <div className="complist">
             {engines.map(([name, share]) => (
@@ -2203,26 +2231,24 @@ function DashReal({ audit }: { audit: AuditData }) {
               </div>
             ))}
           </div>
-          <div className="dcard-foot">
-            Cuota de respuestas en las que apareces, por motor.
-          </div>
+          <div className="dcard-foot">{t("dash.shareFoot")}</div>
         </div>
 
         <div className="dcard">
           <div className="dcard-head">
-            <span className="dcard-title">Tu evolución</span>
+            <span className="dcard-title">{t("dash.progress")}</span>
           </div>
           {trend.length < 2 ? (
             <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5, margin: "auto 0" }}>
-              Primera medición registrada. Repite el análisis periódicamente para ver la
-              evolución de tu visibilidad.
+              {t("dash.firstMeasure")}
             </div>
           ) : (
             <>
-              <TrendChart points={trend.map((t) => t.score)} />
+              <TrendChart points={trend.map((pt) => pt.score)} />
               <div className="dcard-foot">
-                De <b>{trend[0].score}</b> a <b>{trend[trend.length - 1].score}</b> de 10 ·{" "}
-                {trend.length} mediciones
+                {t("dash.fromToA")} <b>{trend[0].score}</b> {t("dash.to")}{" "}
+                <b>{trend[trend.length - 1].score}</b> {t("dash.of10dot")} {trend.length}{" "}
+                {t("dash.measurements")}
               </div>
             </>
           )}
@@ -2231,22 +2257,26 @@ function DashReal({ audit }: { audit: AuditData }) {
 
       <div className="dcard">
         <div className="dcard-head">
-          <span className="dcard-title">En qué búsquedas te recomiendan</span>
-          <span className="dcard-sub">Preguntas reales a la IA</span>
+          <span className="dcard-title">{t("dash.whichRecommend")}</span>
+          <span className="dcard-sub">{t("dash.realQuestions")}</span>
         </div>
         <div className="kwchips">
           {probes.map((p, i) => (
             <div className={`kwchip ${p.appeared ? "yes" : "soon"}`} key={i}>
               <span>{p.query}</span>
               <b>
-                {p.appeared ? (p.position ? `Apareces · #${p.position}` : "Apareces") : "Aún no"}
+                {p.appeared
+                  ? p.position
+                    ? `${t("dash.youAppear")} · #${p.position}`
+                    : t("dash.youAppear")
+                  : t("dash.notYet")}
               </b>
             </div>
           ))}
         </div>
         <div className="dcard-foot">
-          Apareces en <b>{appeared}</b> de <b>{total}</b> búsquedas. Las que faltan
-          son tu mayor oportunidad — genera tu texto en &quot;Tu kit&quot;.
+          {t("dash.realFootA")} <b>{appeared}</b> {t("dash.realFootMid")} <b>{total}</b>{" "}
+          {t("dash.realFootB")}
         </div>
       </div>
     </>
@@ -2254,9 +2284,12 @@ function DashReal({ audit }: { audit: AuditData }) {
 }
 
 // ============== Vista HISTORIAL (guardado local) ==============
-function fmtDate(ms: number): string {
+function fmtDate(ms: number, lang: Lang): string {
   try {
-    return new Date(ms).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+    return new Date(ms).toLocaleDateString(lang === "es" ? "es-ES" : "en-US", {
+      day: "numeric",
+      month: "short",
+    });
   } catch {
     return "";
   }
@@ -2275,15 +2308,17 @@ function HistoryView({
   onRemove: (id: string) => void;
   setView: (v: View) => void;
 }) {
+  const t = useT();
+  const { lang } = useLang();
   return (
     <div>
       <div className="dtitle">
-        <h1>Tu historial</h1>
+        <h1>{t("hist.title")}</h1>
       </div>
       <div className="setwrap">
         <span className="backlink" onClick={() => setView("halo")}>
           <Ic ic="back" size={13} />
-          Volver
+          {t("common.back")}
         </span>
 
         <button
@@ -2302,7 +2337,7 @@ function HistoryView({
             marginBottom: 16,
           }}
         >
-          + Analizar un negocio nuevo
+          {t("hist.analyzeNew")}
         </button>
 
         {entries.length === 0 ? (
@@ -2310,7 +2345,7 @@ function HistoryView({
             className="glass"
             style={{ padding: 24, textAlign: "center", fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5 }}
           >
-            Todavía no has analizado ningún negocio. Introduce tu web para medir tu visibilidad.
+            {t("hist.empty")}
           </div>
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
@@ -2346,12 +2381,12 @@ function HistoryView({
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)" }}>
                     {e.sub ? `${e.sub} · ` : ""}
-                    {e.score} de 10 · {fmtDate(e.createdAt)}
+                    {t("report.ofTen", { n: e.score })} · {fmtDate(e.createdAt, lang)}
                   </div>
                 </div>
                 <button
                   type="button"
-                  aria-label="Eliminar"
+                  aria-label={t("common.delete")}
                   onClick={(ev) => {
                     ev.stopPropagation();
                     onRemove(e.id);
@@ -2405,6 +2440,7 @@ function SettingsView({
     loadPrefs("halo:modes", { expert: false, watch: true, auto: false })
   );
   const [connecting, setConnecting] = useState<ConnKey | null>(null);
+  const t = useT();
 
   // Conexión "simulada-real": flujo creíble (Conectar → Conectando… → Conectado)
   // y estado que PERSISTE (no se resetea al salir de Ajustes).
@@ -2434,45 +2470,45 @@ function SettingsView({
     });
   }
 
-  const CONNS: { key: ConnKey; ic: IcName; title: string; desc: string }[] = [
-    { key: "web", ic: "globe", title: "Tu sitio web", desc: "Escaneamos tu web para leer tu información y mejorarla." },
-    { key: "maps", ic: "pin", title: "Google de tu negocio", desc: "Tu ficha en Maps: horarios, reseñas y ubicación." },
-    { key: "ig", ic: "cam", title: "Instagram", desc: "Para que sepan qué publicas y ofreces." },
-    { key: "tk", ic: "music", title: "TikTok", desc: "Tu contenido más reciente y popular." },
-    { key: "wa", ic: "bell", title: "WhatsApp", desc: "Te avisamos por aquí cuando ganas terreno." },
+  const CONNS: { key: ConnKey; ic: IcName; tk: string; dk: string }[] = [
+    { key: "web", ic: "globe", tk: "set.conn.web.t", dk: "set.conn.web.d" },
+    { key: "maps", ic: "pin", tk: "set.conn.maps.t", dk: "set.conn.maps.d" },
+    { key: "ig", ic: "cam", tk: "set.conn.ig.t", dk: "set.conn.ig.d" },
+    { key: "tk", ic: "music", tk: "set.conn.tk.t", dk: "set.conn.tk.d" },
+    { key: "wa", ic: "bell", tk: "set.conn.wa.t", dk: "set.conn.wa.d" },
   ];
 
   return (
     <div>
       <div className="dtitle">
-        <h1>Ajustes y conexiones</h1>
+        <h1>{t("app.settings")}</h1>
       </div>
       <div className="setwrap">
         <span className="backlink" onClick={() => setView("dash")}>
           <Ic ic="back" size={13} />
-          Volver
+          {t("common.back")}
         </span>
 
         <div className="glass" style={{ padding: 24, marginBottom: 16 }}>
-          <div className="secttitle">Tu negocio</div>
+          <div className="secttitle">{t("app.yourBiz")}</div>
           <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", margin: "2px 0 14px", lineHeight: 1.5 }}>
-            Si la IA aún no te conoce, dinos quién eres y medimos tu presencia igual.
+            {t("set.bizIntro")}
           </div>
           <div style={{ display: "grid", gap: 8 }}>
             <input
-              placeholder="Nombre del negocio"
+              placeholder={t("set.bizName")}
               value={bName}
               onChange={(e) => setBName(e.target.value)}
               style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
             />
             <input
-              placeholder="Tipo (ej. restaurante italiano)"
+              placeholder={t("set.bizType")}
               value={bType}
               onChange={(e) => setBType(e.target.value)}
               style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
             />
             <input
-              placeholder="Ciudad"
+              placeholder={t("set.city")}
               value={bCity}
               onChange={(e) => setBCity(e.target.value)}
               style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
@@ -2485,14 +2521,14 @@ function SettingsView({
               onClick={() => onAnalyze(bName, bType, bCity)}
               style={{ border: "none", background: "#000", color: "#fff", borderRadius: 6, padding: "12px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", justifySelf: "start" }}
             >
-              Analizar mi negocio
+              {t("set.analyzeBiz")}
             </button>
           </div>
         </div>
 
         <div className="glass" style={{ padding: 24, marginBottom: 16 }}>
-          <div className="secttitle">Conecta tu negocio</div>
-          {CONNS.map(({ key, ic, title, desc }) => {
+          <div className="secttitle">{t("set.connectBiz")}</div>
+          {CONNS.map(({ key, ic, tk, dk }) => {
             const on = conns[key];
             return (
               <div className="setrow" key={key}>
@@ -2502,8 +2538,8 @@ function SettingsView({
                   </svg>
                 </span>
                 <div className="stxt">
-                  <b>{title}</b>
-                  <small>{desc}</small>
+                  <b>{t(tk)}</b>
+                  <small>{t(dk)}</small>
                 </div>
                 <button
                   type="button"
@@ -2511,7 +2547,7 @@ function SettingsView({
                   disabled={connecting === key}
                   onClick={() => toggleConn(key)}
                 >
-                  {connecting === key ? "Conectando…" : on ? "Conectado" : "Conectar"}
+                  {connecting === key ? t("set.connecting") : on ? t("set.connected") : t("set.connect")}
                 </button>
               </div>
             );
@@ -2519,7 +2555,7 @@ function SettingsView({
         </div>
 
         <div className="glass" style={{ padding: 24, marginBottom: 16 }}>
-          <div className="secttitle">Cómo ves la información</div>
+          <div className="secttitle">{t("set.howSee")}</div>
           <div className="setrow">
             <span className="si gl">
               <svg width="19" height="19" viewBox="0 0 24 24">
@@ -2527,10 +2563,8 @@ function SettingsView({
               </svg>
             </span>
             <div className="stxt">
-              <b>Modo experto</b>
-              <small>
-                Muestra términos técnicos (Citation Score, Share of Answer). Apagado, todo en palabras simples.
-              </small>
+              <b>{t("set.expert")}</b>
+              <small>{t("set.expertDesc")}</small>
             </div>
             <div
               className={`toggle ${modes.expert ? "on" : ""}`}
@@ -2544,7 +2578,7 @@ function SettingsView({
         </div>
 
         <div className="glass" style={{ padding: 24 }}>
-          <div className="secttitle">Herramientas</div>
+          <div className="secttitle">{t("set.tools")}</div>
           <div className="setrow">
             <span className="si gl">
               <svg width="19" height="19" viewBox="0 0 24 24">
@@ -2552,8 +2586,8 @@ function SettingsView({
               </svg>
             </span>
             <div className="stxt">
-              <b>Vigilar competencia</b>
-              <small>Te notificamos los movimientos de tus competidores para que te adelantes.</small>
+              <b>{t("set.watch")}</b>
+              <small>{t("set.watchDesc")}</small>
             </div>
             <div
               className={`toggle ${modes.watch ? "on" : ""}`}
@@ -2571,8 +2605,8 @@ function SettingsView({
               </svg>
             </span>
             <div className="stxt">
-              <b>Modo automático</b>
-              <small>Halo aplica las mejoras de forma automática y te notifica cada acción completada.</small>
+              <b>{t("set.auto")}</b>
+              <small>{t("set.autoDesc")}</small>
             </div>
             <div
               className={`toggle ${modes.auto ? "on" : ""}`}

@@ -82,6 +82,13 @@ const D: Record<string, Entry> = {
   "load.s4": { en: "Preparing your recommendations", es: "Preparando tus recomendaciones" },
   "load.analyzing": { en: "Analyzing", es: "Analizando" },
 
+  // ---- Errors ----
+  "err.analyze": { en: "We couldn't run the analysis", es: "No se pudo analizar" },
+  "err.nameType": {
+    en: "Enter at least the name and the business type.",
+    es: "Pon al menos el nombre y el tipo de negocio.",
+  },
+
   // ---- App shell ----
   "app.backHome": { en: "Back to home", es: "Salir al inicio" },
   "app.yourBiz": { en: "Your business", es: "Tu negocio" },
@@ -179,6 +186,213 @@ const D: Record<string, Entry> = {
   "report.demoKnow": {
     en: "What ChatGPT, Perplexity and Gemini know about you",
     es: "Lo que ChatGPT, Perplexity y Gemini saben de ti",
+  },
+
+  // ---- Kit (AI assets) ----
+  "kit.errGen": { en: "We couldn't generate the copy", es: "No pudimos generar el texto" },
+  "kit.invalidEmail": {
+    en: "Enter a valid email to receive your kit.",
+    es: "Pon un email válido para enviarte tu kit.",
+  },
+  "kit.title": {
+    en: "Your kit to get recommended by AI",
+    es: "Tu kit para que la IA te recomiende",
+  },
+  "kit.sub": {
+    en: "Copy ready to paste into your website and Google profile, designed for the searches where you don't appear today.",
+    es: "Texto listo para copiar en tu web y tu ficha de Google, pensado para las búsquedas donde hoy no apareces.",
+  },
+  "kit.generating": { en: "Generating your copy…", es: "Generando tu texto…" },
+  "kit.generateBtn": {
+    en: "Generate AI-optimized copy",
+    es: "Generar texto optimizado para IA",
+  },
+  "kit.gateText": {
+    en: "We'll email your optimized kit and notify you of improvements. No spam.",
+    es: "Te enviamos tu kit optimizado al correo y te avisamos de mejoras. Sin spam.",
+  },
+  "kit.generatingShort": { en: "Generating…", es: "Generando…" },
+  "kit.generateMine": { en: "Generate my kit →", es: "Generar mi kit →" },
+  "kit.optDesc": { en: "Optimized description", es: "Descripción optimizada" },
+  "kit.faq": { en: "Frequently asked questions (FAQ)", es: "Preguntas frecuentes (FAQ)" },
+  "kit.actions": { en: "Recommended actions", es: "Acciones recomendadas" },
+  "kit.schema": { en: "Structured data (Schema)", es: "Datos estructurados (Schema)" },
+  "kit.schemaHint": {
+    en: "Paste it into your website's HTML (in the head). It makes AI and Google understand your business instantly.",
+    es: "Pégalo en el HTML de tu web (en la cabecera). Hace que la IA y Google entiendan tu negocio al instante.",
+  },
+  "kit.regenerate": { en: "Regenerate", es: "Regenerar" },
+
+  // ---- Dashboard (shared + demo + real) ----
+  "dash.title": { en: "AI visibility", es: "Visibilidad ante la IA" },
+  "dash.live": { en: "live", es: "en directo" },
+  "dash.demoSub": { en: "Your business · Milan · live", es: "Tu negocio · Milán · en directo" },
+  "dash.last7": { en: "Last 7 days ▾", es: "Últimos 7 días ▾" },
+  "dash.chosen": { en: "How often you're chosen", es: "Cuánto te eligen" },
+  "dash.vsLastWeek": { en: "+1 vs. last week", es: "+1 vs. semana pasada" },
+  "dash.mention": { en: "answers mention you", es: "respuestas te mencionan" },
+  "dash.inArea": { en: "in your area", es: "en tu zona" },
+  "dash.queriesWk": { en: "queries/week", es: "consultas/semana" },
+  "dash.activeEngines": { en: "active engines", es: "motores activos" },
+  "dash.trend8": { en: "Trend · 8 weeks", es: "Tendencia · 8 semanas" },
+  "dash.fromAvgA": { en: "From 1.8 to", es: "De 1.8 a" },
+  "dash.fromAvgB": { en: "on average", es: "de media" },
+  "dash.health": { en: "Profile health", es: "Salud del perfil" },
+  "dash.missing": { en: "Missing", es: "Faltan" },
+  "dash.hours": { en: "hours", es: "horarios" },
+  "dash.reservations": { en: "reservations", es: "reservas" },
+  "dash.and": { en: "and", es: "y" },
+  "dash.presenceByEngine": { en: "Presence by engine", es: "Presencia por motor" },
+  "dash.connectMore": { en: "Connect more →", es: "Conectar más →" },
+  "dash.youVsComp": { en: "You vs. your competition", es: "Tú y tu competencia" },
+  "dash.top5area": { en: "Top 5 · your area", es: "Top 5 · tu zona" },
+  "dash.optOppA": { en: "Optimization opportunity:", es: "Oportunidad de optimización:" },
+  "dash.points": { en: "2 points", es: "2 puntos" },
+  "dash.optOppB": {
+    en: "to catch the leader in your area.",
+    es: "para alcanzar al líder de tu zona.",
+  },
+  "dash.byAreaMilan": { en: "By area of Milan", es: "Por zona de Milán" },
+  "dash.seeAll": { en: "See all →", es: "Ver todo →" },
+  "dash.bigOppA": { en: "Your biggest opportunity:", es: "Tu mayor oportunidad:" },
+  "dash.peopleSearch": { en: "What people search for", es: "Lo que la gente busca" },
+  "dash.realQuestions": { en: "Real questions to the AI", es: "Preguntas reales a la IA" },
+  "dash.youAppear": { en: "You appear", es: "Apareces" },
+  "dash.notYet": { en: "Not yet", es: "Aún no" },
+  "dash.yourImpact": { en: "Your impact on AI", es: "Tu impacto en la IA" },
+  "dash.whatImproved": { en: "what Halo improved", es: "qué mejoró Halo" },
+  "dash.visUpA": { en: "Your average visibility rose", es: "Tu visibilidad media subió" },
+  "dash.visUpB": { en: "since you activated Halo.", es: "desde que activaste Halo." },
+  "dash.comp.leader": { en: "Zone leader", es: "Líder de zona" },
+  "dash.comp.c2": { en: "Competitor 2", es: "Competidor 2" },
+  "dash.comp.c4": { en: "Competitor 4", es: "Competidor 4" },
+  "dash.comp.c5": { en: "Competitor 5", es: "Competidor 5" },
+  "dash.kw.0": { en: '"best place in central Milan"', es: '"mejor sitio en el centro de Milán"' },
+  "dash.kw.1": { en: '"recommended near the Duomo"', es: '"recomendado cerca del Duomo"' },
+  "dash.kw.2": { en: '"open on Sunday in Milan"', es: '"abierto el domingo en Milán"' },
+  "dash.kw.3": { en: '"group options in Navigli"', es: '"opciones para grupos en Navigli"' },
+  "dash.imp.0": { en: "Dishes indexed", es: "Platos indexados" },
+  "dash.imp.1": { en: "Cited with reviews", es: "Citado con reseñas" },
+  "dash.imp.2": { en: "Missing location", es: "Falta ubicación" },
+  "dash.imp.3": { en: "In progress", es: "En progreso" },
+  "dash.searchesPresence": { en: "searches with presence", es: "búsquedas con presencia" },
+  "dash.engineMeasured": { en: "engine measured", es: "motor medido" },
+  "dash.enginesMeasured": { en: "engines measured", es: "motores medidos" },
+  "dash.bestPos": { en: "best position", es: "mejor posición" },
+  "dash.shareFoot": {
+    en: "Share of answers you appear in, by engine.",
+    es: "Cuota de respuestas en las que apareces, por motor.",
+  },
+  "dash.progress": { en: "Your progress", es: "Tu evolución" },
+  "dash.firstMeasure": {
+    en: "First measurement recorded. Repeat the analysis periodically to see your visibility evolve.",
+    es: "Primera medición registrada. Repite el análisis periódicamente para ver la evolución de tu visibilidad.",
+  },
+  "dash.fromToA": { en: "From", es: "De" },
+  "dash.to": { en: "to", es: "a" },
+  "dash.of10dot": { en: "of 10 ·", es: "de 10 ·" },
+  "dash.measurements": { en: "measurements", es: "mediciones" },
+  "dash.whichRecommend": {
+    en: "Which searches recommend you",
+    es: "En qué búsquedas te recomiendan",
+  },
+  "dash.realFootA": { en: "You appear in", es: "Apareces en" },
+  "dash.realFootMid": { en: "of", es: "de" },
+  "dash.realFootB": {
+    en: 'searches. The missing ones are your biggest opportunity — generate your copy in "Your kit".',
+    es: 'búsquedas. Las que faltan son tu mayor oportunidad — genera tu texto en "Tu kit".',
+  },
+
+  // ---- History ----
+  "hist.title": { en: "Your history", es: "Tu historial" },
+  "hist.analyzeNew": { en: "+ Analyze a new business", es: "+ Analizar un negocio nuevo" },
+  "hist.empty": {
+    en: "You haven't analyzed any business yet. Enter your website to measure your visibility.",
+    es: "Todavía no has analizado ningún negocio. Introduce tu web para medir tu visibilidad.",
+  },
+  "common.back": { en: "Back", es: "Volver" },
+  "common.delete": { en: "Delete", es: "Eliminar" },
+
+  // ---- Settings ----
+  "set.bizIntro": {
+    en: "If AI doesn't know you yet, tell us who you are and we'll measure your presence anyway.",
+    es: "Si la IA aún no te conoce, dinos quién eres y medimos tu presencia igual.",
+  },
+  "set.bizName": { en: "Business name", es: "Nombre del negocio" },
+  "set.bizType": { en: "Type (e.g. Italian restaurant)", es: "Tipo (ej. restaurante italiano)" },
+  "set.city": { en: "City", es: "Ciudad" },
+  "set.analyzeBiz": { en: "Analyze my business", es: "Analizar mi negocio" },
+  "set.connectBiz": { en: "Connect your business", es: "Conecta tu negocio" },
+  "set.connecting": { en: "Connecting…", es: "Conectando…" },
+  "set.connected": { en: "Connected", es: "Conectado" },
+  "set.connect": { en: "Connect", es: "Conectar" },
+  "set.howSee": { en: "How you see the information", es: "Cómo ves la información" },
+  "set.expert": { en: "Expert mode", es: "Modo experto" },
+  "set.expertDesc": {
+    en: "Shows technical terms (Citation Score, Share of Answer). When off, everything is in plain words.",
+    es: "Muestra términos técnicos (Citation Score, Share of Answer). Apagado, todo en palabras simples.",
+  },
+  "set.tools": { en: "Tools", es: "Herramientas" },
+  "set.watch": { en: "Watch competition", es: "Vigilar competencia" },
+  "set.watchDesc": {
+    en: "We notify you of your competitors' moves so you can stay ahead.",
+    es: "Te notificamos los movimientos de tus competidores para que te adelantes.",
+  },
+  "set.auto": { en: "Automatic mode", es: "Modo automático" },
+  "set.autoDesc": {
+    en: "Halo applies improvements automatically and notifies you of each completed action.",
+    es: "Halo aplica las mejoras de forma automática y te notifica cada acción completada.",
+  },
+  "set.conn.web.t": { en: "Your website", es: "Tu sitio web" },
+  "set.conn.web.d": {
+    en: "We scan your site to read your information and improve it.",
+    es: "Escaneamos tu web para leer tu información y mejorarla.",
+  },
+  "set.conn.maps.t": { en: "Your business on Google", es: "Google de tu negocio" },
+  "set.conn.maps.d": {
+    en: "Your Maps listing: hours, reviews and location.",
+    es: "Tu ficha en Maps: horarios, reseñas y ubicación.",
+  },
+  "set.conn.ig.t": { en: "Instagram", es: "Instagram" },
+  "set.conn.ig.d": {
+    en: "So they know what you post and offer.",
+    es: "Para que sepan qué publicas y ofreces.",
+  },
+  "set.conn.tk.t": { en: "TikTok", es: "TikTok" },
+  "set.conn.tk.d": { en: "Your most recent and popular content.", es: "Tu contenido más reciente y popular." },
+  "set.conn.wa.t": { en: "WhatsApp", es: "WhatsApp" },
+  "set.conn.wa.d": {
+    en: "We'll ping you here when you gain ground.",
+    es: "Te avisamos por aquí cuando ganas terreno.",
+  },
+
+  // ---- Know items (demo fallback) ----
+  "know.0.t": { en: "What kind of business you are", es: "Qué tipo de negocio eres" },
+  "know.0.d": {
+    en: "Italian restaurant · artisanal pasta. They've got it clear.",
+    es: "Restaurante italiano · pasta artesanal. Lo tienen claro.",
+  },
+  "know.1.t": { en: "Where you are", es: "Dónde estás" },
+  "know.1.d": {
+    en: "Central Milan, near the Duomo. Well recognized.",
+    es: "Centro de Milán, cerca del Duomo. Bien reconocido.",
+  },
+  "know.2.t": { en: "Your signature dishes", es: "Tus platos estrella" },
+  "know.2.d": { en: "Fresh pasta, risotto. They mention them.", es: "Pasta fresca, risotto. Los mencionan." },
+  "know.3.t": { en: "Your hours", es: "Tus horarios" },
+  "know.3.d": {
+    en: "They don't know when you open yet. Room to appear in more searches.",
+    es: "Todavía no saben cuándo abres. Espacio para aparecer en más búsquedas.",
+  },
+  "know.4.t": { en: "How to book", es: "Cómo reservar" },
+  "know.4.d": {
+    en: "No clear way to book yet. A chance to win reservations.",
+    es: "Aún no hay forma clara de reservar. Oportunidad de ganar reservas.",
+  },
+  "know.5.t": { en: "Customer reviews", es: "Opiniones de clientes" },
+  "know.5.d": {
+    en: "Good recent reviews. They use them in your favor.",
+    es: "Buenas reseñas recientes. Las usan a tu favor.",
   },
 };
 
