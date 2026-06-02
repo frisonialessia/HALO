@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
 import { addHistory, listHistory, removeHistory, type HistoryEntry } from "@/lib/history";
+import { isValidEmail, rememberLeadEmail, savedLeadEmail, submitLead } from "@/lib/lead";
 
 // ============== Orbe (logo) ==============
 function Orb({ className = "", thinking = false }: { className?: string; thinking?: boolean }) {
@@ -919,6 +920,9 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
   const [assets, setAssets] = useState<AiAssets | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [gate, setGate] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailErr, setEmailErr] = useState("");
 
   async function run() {
     setErr("");
@@ -954,6 +958,34 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
     }
   }
 
+  // Si ya dejó su email antes, genera directo; si no, abre el email-gate.
+  function startGenerate() {
+    if (savedLeadEmail()) {
+      run();
+    } else {
+      setEmailErr("");
+      setGate(true);
+    }
+  }
+
+  // Captura el email (alimenta el funnel) y genera. No bloquea si el registro falla.
+  function submitAndRun() {
+    const value = email.trim();
+    if (!isValidEmail(value)) {
+      setEmailErr("Pon un email válido para enviarte tu kit.");
+      return;
+    }
+    setEmailErr("");
+    rememberLeadEmail(value);
+    void submitLead(value, {
+      business: audit?.business.name ?? "Ejemplo",
+      score: audit ? Math.round(audit.shareOfAnswer * 10) : null,
+      source: "assets",
+    });
+    setGate(false);
+    run();
+  }
+
   return (
     <div style={{ marginTop: 26, paddingTop: 22, borderTop: "1px solid var(--gline)" }}>
       <h2>Tu kit para que la IA te recomiende</h2>
@@ -962,10 +994,10 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
         búsquedas donde hoy no apareces.
       </p>
 
-      {!assets && (
+      {!assets && !gate && (
         <button
           type="button"
-          onClick={run}
+          onClick={startGenerate}
           disabled={loading}
           style={{
             border: "none",
@@ -982,6 +1014,47 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
         >
           {loading ? "Generando tu texto…" : "Generar texto optimizado para IA"}
         </button>
+      )}
+
+      {!assets && gate && (
+        <div style={{ display: "grid", gap: 8, maxWidth: 420 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5 }}>
+            Te enviamos tu kit optimizado al correo y te avisamos de mejoras. Sin spam.
+          </div>
+          <input
+            type="email"
+            placeholder="tu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitAndRun();
+            }}
+            style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
+          />
+          {emailErr && (
+            <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--deep)" }}>{emailErr}</div>
+          )}
+          <button
+            type="button"
+            onClick={submitAndRun}
+            disabled={loading}
+            style={{
+              justifySelf: "start",
+              border: "none",
+              background: "var(--text)",
+              color: "#fff",
+              borderRadius: "var(--r-btn)",
+              padding: "12px 18px",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: loading ? "default" : "pointer",
+              fontFamily: "inherit",
+              opacity: loading ? 0.7 : 1,
+            }}
+          >
+            {loading ? "Generando…" : "Generar mi kit →"}
+          </button>
+        </div>
       )}
 
       {err && (
