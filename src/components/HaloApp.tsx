@@ -5,6 +5,7 @@ import { addHistory, listHistory, removeHistory, type HistoryEntry } from "@/lib
 import { isValidEmail, rememberLeadEmail, savedLeadEmail, submitLead } from "@/lib/lead";
 import { mockAudit } from "@/lib/mock";
 import { loadPrefs, savePrefs } from "@/lib/prefs";
+import { addTrendPoint, getTrend, type TrendPoint } from "@/lib/trend";
 
 // ============== Orbe (logo) ==============
 function Orb({ className = "", thinking = false }: { className?: string; thinking?: boolean }) {
@@ -495,6 +496,8 @@ export default function HaloApp() {
 
   // Guarda una auditoría en el historial local y devuelve la lista nueva.
   function rememberAudit(a: AuditData) {
+    // Cada análisis real añade un punto a la evolución del negocio.
+    addTrendPoint(a.business.name, Math.round(a.shareOfAnswer * 10));
     return addHistory<AuditData>({
       label: a.business.name,
       sub: a.business.city || a.business.business_type,
@@ -1973,6 +1976,33 @@ function DashDemo({ score }: { score: number }) {
   );
 }
 
+// Mini-gráfico de línea (SVG) para la evolución del score.
+function TrendChart({ points }: { points: number[] }) {
+  const w = 100;
+  const h = 40;
+  const n = points.length;
+  const coords = points
+    .map((v, i) => {
+      const x = n === 1 ? w / 2 : (i / (n - 1)) * w;
+      const y = h - (Math.max(0, Math.min(10, v)) / 10) * h;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: "100%", height: 64, margin: "6px 0 4px" }}>
+      <polyline
+        points={coords}
+        fill="none"
+        stroke="var(--text)"
+        strokeWidth="2"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
 // ============== Vista DASHBOARD (datos reales del análisis) ==============
 function DashReal({ audit }: { audit: AuditData }) {
   const probes = uniqueProbes(audit.probes ?? []);
@@ -1985,6 +2015,10 @@ function DashReal({ audit }: { audit: AuditData }) {
     .map((p) => p.position as number);
   const bestPos = positions.length ? Math.min(...positions) : null;
   const city = audit.business.city ? " · " + audit.business.city : "";
+  const [trend, setTrend] = useState<TrendPoint[]>([]);
+  useEffect(() => {
+    setTrend(getTrend(audit.business.name));
+  }, [audit.business.name]);
 
   return (
     <>
@@ -1998,7 +2032,7 @@ function DashReal({ audit }: { audit: AuditData }) {
         </div>
       </div>
 
-      <div className="drow drow-two">
+      <div className="drow drow-top">
         <div className="dcard">
           <div className="dcard-head">
             <span className="dlbl">Cuánto te eligen</span>
@@ -2046,6 +2080,26 @@ function DashReal({ audit }: { audit: AuditData }) {
           <div className="dcard-foot">
             Cuota de respuestas en las que apareces, por motor.
           </div>
+        </div>
+
+        <div className="dcard">
+          <div className="dcard-head">
+            <span className="dcard-title">Tu evolución</span>
+          </div>
+          {trend.length < 2 ? (
+            <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5, margin: "auto 0" }}>
+              Primera medición registrada. Vuelve a analizar tu negocio cada cierto tiempo
+              y aquí verás cómo sube tu visibilidad.
+            </div>
+          ) : (
+            <>
+              <TrendChart points={trend.map((t) => t.score)} />
+              <div className="dcard-foot">
+                De <b>{trend[0].score}</b> a <b>{trend[trend.length - 1].score}</b> de 10 ·{" "}
+                {trend.length} mediciones
+              </div>
+            </>
+          )}
         </div>
       </div>
 
