@@ -170,6 +170,72 @@ function pickAnswer(q: string): ReactNode {
   return ANS.def;
 }
 
+// Agrupa los probes por búsqueda única (con varios motores, una misma query
+// aparece una vez por motor): "apareces" si lo haces en AL MENOS un motor.
+function uniqueProbes(
+  probes: { query: string; appeared: boolean; position?: number }[]
+): { query: string; appeared: boolean; position?: number }[] {
+  const map = new Map<string, { query: string; appeared: boolean; position?: number }>();
+  for (const p of probes) {
+    const ex = map.get(p.query);
+    if (!ex) {
+      map.set(p.query, { ...p });
+    } else {
+      ex.appeared = ex.appeared || p.appeared;
+      if (p.position && (!ex.position || p.position < ex.position)) ex.position = p.position;
+    }
+  }
+  return Array.from(map.values());
+}
+
+// Respuestas del chat con DATOS REALES (sin API), a partir de los probes del
+// análisis. Honesto sobre lo que aún no puede hacer.
+function answerReal(
+  q: string,
+  probes: { query: string; appeared: boolean; position?: number }[]
+): ReactNode {
+  const t = q.toLowerCase();
+  const got = probes.filter((p) => p.appeared);
+  const missed = probes.filter((p) => !p.appeared);
+  const ex = (arr: typeof probes) =>
+    arr.slice(0, 3).map((m) => `"${m.query}"`).join(", ");
+
+  if (/no aparezco|no aparece|mejorar|qu[eé] hago|primero|falta/.test(t)) {
+    if (missed.length === 0)
+      return "Apareces en todas las búsquedas que probamos. El siguiente paso es reforzar tu posición y ampliar a más búsquedas.";
+    return (
+      <>
+        No apareces en <b>{missed.length} de {probes.length}</b> búsquedas, por
+        ejemplo: {ex(missed)}. Genera tu texto optimizado en <b>&quot;Tu kit&quot;</b> (panel
+        izquierdo) para empezar a cubrirlas.
+      </>
+    );
+  }
+  if (/aparezco|b[uú]squeda|presencia|cu[aá]nto|d[oó]nde/.test(t)) {
+    return (
+      <>
+        Hoy te recomiendan en <b>{got.length} de {probes.length}</b> búsquedas
+        {got.length ? <>, por ejemplo: {ex(got)}.</> : "."}
+      </>
+    );
+  }
+  if (/texto|genera|optimiz|kit|descripci|faq/.test(t)) {
+    return (
+      <>
+        Te lo preparo: pulsa <b>&quot;Generar texto optimizado para IA&quot;</b> en
+        &quot;Tu kit&quot;. Uso justo las búsquedas donde aún no apareces.
+      </>
+    );
+  }
+  return (
+    <>
+      Por ahora puedo enseñarte <b>en qué búsquedas apareces</b> y <b>generarte el
+      texto optimizado</b> (sección &quot;Tu kit&quot;). El chat completo con IA lo
+      activamos al conectar más motores.
+    </>
+  );
+}
+
 // Dashboard data
 const COMPETITORS: { n: string; v: number; score: string; you?: boolean }[] = [
   { n: "Líder de zona", v: 60, score: "6/10" },
@@ -258,6 +324,7 @@ export default function HaloApp() {
   const [audit, setAudit] = useState<AuditData | null>(null);
   const [auditErr, setAuditErr] = useState("");
   const [prefillName, setPrefillName] = useState("");
+  const [analyzingLabel, setAnalyzingLabel] = useState("tu negocio");
 
   useEffect(() => {
     if (screen !== "landing") return;
@@ -280,6 +347,7 @@ export default function HaloApp() {
   async function startAudit() {
     const input = bizInput.trim();
     if (!input) return;
+    setAnalyzingLabel(input);
     setAuditErr("");
     setAudit(null);
     setScreen("loading");
@@ -320,6 +388,7 @@ export default function HaloApp() {
       setAuditErr("Pon al menos el nombre y el tipo de negocio.");
       return;
     }
+    setAnalyzingLabel(name);
     setAuditErr("");
     setAudit(null);
     setScreen("loading");
@@ -465,7 +534,7 @@ export default function HaloApp() {
               </defs>
             </svg>
             <h2>
-              Analizando <span className="lurl">tu negocio</span>
+              Analizando <span className="lurl">{analyzingLabel}</span>
             </h2>
             <div className="lsteps">
               {LOAD_STEPS.map((s, i) => (
@@ -881,6 +950,10 @@ function HaloView({ audit }: { audit: AuditData | null }) {
   const score = audit ? Math.round(audit.shareOfAnswer * 10) : 3;
   const bizName = audit?.business.name ?? "tu negocio";
   const enginesLabel = audit ? listEngines(Object.keys(audit.byEngine)) : "Perplexity";
+  const realProbes = audit ? uniqueProbes(audit.probes ?? []) : [];
+  const suggestions = audit
+    ? ["¿En qué búsquedas no aparezco?", "Genérame el texto optimizado", "¿Dónde sí aparezco?"]
+    : SUGGESTIONS;
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -918,7 +991,8 @@ function HaloView({ audit }: { audit: AuditData | null }) {
     setInput("");
     setThinking(true);
     window.setTimeout(() => {
-      setMessages((m) => [...m, { role: "bot", text: pickAnswer(t) }]);
+      const answer = audit ? answerReal(t, realProbes) : pickAnswer(t);
+      setMessages((m) => [...m, { role: "bot", text: answer }]);
       setThinking(false);
     }, 900);
   }
@@ -946,22 +1020,51 @@ function HaloView({ audit }: { audit: AuditData | null }) {
               Cuánto te eligen cuando buscan un negocio como el tuyo
             </div>
           </div>
-          <h2>Lo que ChatGPT, Perplexity y Gemini saben de ti</h2>
-          {KNOW_ITEMS.map((k, i) => (
-            <div className="know" key={i}>
-              <div className="kt">
-                <span className={`chk ${k.ok ? "ok" : "miss"}`}>
-                  {k.ok && (
-                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m5 12 5 5 9-10" />
-                    </svg>
-                  )}
-                </span>
-                {k.t}
-              </div>
-              <div className={`kd ${k.op ? "op" : ""}`}>{k.d}</div>
-            </div>
-          ))}
+          {audit ? (
+            <>
+              <h2>En qué búsquedas te recomiendan</h2>
+              {realProbes.map((p, i) => (
+                <div className="know" key={i}>
+                  <div className="kt">
+                    <span className={`chk ${p.appeared ? "ok" : "miss"}`}>
+                      {p.appeared && (
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m5 12 5 5 9-10" />
+                        </svg>
+                      )}
+                    </span>
+                    {p.query}
+                  </div>
+                  <div className={`kd ${!p.appeared ? "op" : ""}`}>
+                    {p.appeared
+                      ? p.position
+                        ? `Te mencionan · puesto #${p.position}`
+                        : "Te mencionan en esta búsqueda"
+                      : "Aún no apareces aquí. Oportunidad de ganar visibilidad."}
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <h2>Lo que ChatGPT, Perplexity y Gemini saben de ti</h2>
+              {KNOW_ITEMS.map((k, i) => (
+                <div className="know" key={i}>
+                  <div className="kt">
+                    <span className={`chk ${k.ok ? "ok" : "miss"}`}>
+                      {k.ok && (
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m5 12 5 5 9-10" />
+                        </svg>
+                      )}
+                    </span>
+                    {k.t}
+                  </div>
+                  <div className={`kd ${k.op ? "op" : ""}`}>{k.d}</div>
+                </div>
+              ))}
+            </>
+          )}
           <AssetsSection audit={audit} />
         </div>
       </div>
@@ -1023,7 +1126,7 @@ function HaloView({ audit }: { audit: AuditData | null }) {
             </button>
           </div>
           <div className="sug">
-            {SUGGESTIONS.map((s, i) => (
+            {suggestions.map((s, i) => (
               <button key={i} type="button" onClick={() => send(s)}>
                 {s}
               </button>
@@ -1037,16 +1140,19 @@ function HaloView({ audit }: { audit: AuditData | null }) {
 
 // ============== Vista DASHBOARD (monocromo) ==============
 function DashView({ audit }: { audit: AuditData | null }) {
-  const score = audit ? Math.round(audit.shareOfAnswer * 10) : 3;
+  if (audit) return <DashReal audit={audit} />;
+  return <DashDemo />;
+}
+
+// Dashboard de la DEMO (datos de ejemplo). Escaparate completo de lo que Halo
+// llegará a medir; en un análisis real solo enseñamos lo verificable.
+function DashDemo() {
+  const score = 3;
   return (
     <>
       <div className="dhead">
         <div>
-          <div className="dhead-sub">
-            {audit
-              ? `${audit.business.name}${audit.business.city ? " · " + audit.business.city : ""} · en directo`
-              : "Tu negocio · Milán · en directo"}
-          </div>
+          <div className="dhead-sub">Tu negocio · Milán · en directo</div>
           <h1 className="dhead-title">Visibilidad ante la IA</h1>
         </div>
         <div className="dhead-actions">
@@ -1219,6 +1325,106 @@ function DashView({ audit }: { audit: AuditData | null }) {
           <div className="dcard-foot">
             Tu visibilidad media subió <b>+18%</b> desde que activaste Halo.
           </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ============== Vista DASHBOARD (datos reales del análisis) ==============
+function DashReal({ audit }: { audit: AuditData }) {
+  const probes = uniqueProbes(audit.probes ?? []);
+  const total = probes.length;
+  const appeared = probes.filter((p) => p.appeared).length;
+  const score = Math.round(audit.shareOfAnswer * 10);
+  const engines = Object.entries(audit.byEngine);
+  const positions = probes
+    .filter((p) => p.appeared && p.position)
+    .map((p) => p.position as number);
+  const bestPos = positions.length ? Math.min(...positions) : null;
+  const city = audit.business.city ? " · " + audit.business.city : "";
+
+  return (
+    <>
+      <div className="dhead">
+        <div>
+          <div className="dhead-sub">
+            {audit.business.name}
+            {city} · en directo
+          </div>
+          <h1 className="dhead-title">Visibilidad ante la IA</h1>
+        </div>
+      </div>
+
+      <div className="drow drow-two">
+        <div className="dcard">
+          <div className="dcard-head">
+            <span className="dlbl">Cuánto te eligen</span>
+          </div>
+          <div className="hero-num">
+            <span className="accent-grad">{score}</span>
+            <span className="hero-den">/ 10</span>
+            <span className="hero-cap">respuestas te mencionan</span>
+          </div>
+          <div className="hero-stats">
+            <div>
+              <div className="hs-n">
+                {appeared}/{total}
+              </div>
+              <div className="hs-l">búsquedas con presencia</div>
+            </div>
+            <div>
+              <div className="hs-n">{engines.length}</div>
+              <div className="hs-l">
+                {engines.length === 1 ? "motor medido" : "motores medidos"}
+              </div>
+            </div>
+            <div>
+              <div className="hs-n">{bestPos ? `#${bestPos}` : "—"}</div>
+              <div className="hs-l">mejor posición</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="dcard">
+          <div className="dcard-head">
+            <span className="dcard-title">Presencia por motor</span>
+          </div>
+          <div className="complist">
+            {engines.map(([name, share]) => (
+              <div className="comp" key={name}>
+                <span className="cname">{ENGINE_LABELS[name] ?? name}</span>
+                <div className="cbar">
+                  <i style={{ width: `${Math.round(share * 100)}%` }} />
+                </div>
+                <span className="cval">{Math.round(share * 10)}/10</span>
+              </div>
+            ))}
+          </div>
+          <div className="dcard-foot">
+            Cuota de respuestas en las que apareces, por motor.
+          </div>
+        </div>
+      </div>
+
+      <div className="dcard">
+        <div className="dcard-head">
+          <span className="dcard-title">En qué búsquedas te recomiendan</span>
+          <span className="dcard-sub">Preguntas reales a la IA</span>
+        </div>
+        <div className="kwchips">
+          {probes.map((p, i) => (
+            <div className={`kwchip ${p.appeared ? "yes" : "soon"}`} key={i}>
+              <span>{p.query}</span>
+              <b>
+                {p.appeared ? (p.position ? `Apareces · #${p.position}` : "Apareces") : "Aún no"}
+              </b>
+            </div>
+          ))}
+        </div>
+        <div className="dcard-foot">
+          Apareces en <b>{appeared}</b> de <b>{total}</b> búsquedas. Las que faltan
+          son tu mayor oportunidad — genera tu texto en &quot;Tu kit&quot;.
         </div>
       </div>
     </>
