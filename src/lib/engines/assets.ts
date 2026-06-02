@@ -1,4 +1,5 @@
 import type { Lang } from "@/types";
+import { stripMarkdown } from "@/lib/text";
 
 // Generador de "AI Assets": convierte el diagnóstico en acción. A partir de
 // los datos del negocio (y de las búsquedas donde NO aparece) escribe texto
@@ -137,22 +138,23 @@ function parseAssets(text: string): AiAssets {
     }
   }
 
-  const description = typeof obj.description === "string" ? obj.description.trim() : "";
+  const description =
+    typeof obj.description === "string" ? stripMarkdown(obj.description.trim()) : "";
 
   const faqs = Array.isArray(obj.faqs)
     ? obj.faqs
         .map((f) => {
           const o = (f ?? {}) as Record<string, unknown>;
           return {
-            q: String(o.q ?? o.question ?? "").trim(),
-            a: String(o.a ?? o.answer ?? "").trim(),
+            q: stripMarkdown(String(o.q ?? o.question ?? "").trim()),
+            a: stripMarkdown(String(o.a ?? o.answer ?? "").trim()),
           };
         })
         .filter((f) => f.q && f.a)
     : [];
 
   const tips = Array.isArray(obj.tips)
-    ? obj.tips.map((t) => String(t ?? "").trim()).filter(Boolean)
+    ? obj.tips.map((t) => stripMarkdown(String(t ?? "").trim())).filter(Boolean)
     : [];
 
   if (!description && faqs.length === 0) {

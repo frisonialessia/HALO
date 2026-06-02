@@ -7,6 +7,7 @@ import { mockAudit } from "@/lib/mock";
 import { loadPrefs, savePrefs } from "@/lib/prefs";
 import { addTrendPoint, getTrend, type TrendPoint } from "@/lib/trend";
 import { translate, useT, useLang, LangContext, type Lang, type TFn } from "@/lib/i18n";
+import { stripMarkdown } from "@/lib/text";
 
 // ============== Orbe (logo) ==============
 function Orb({ className = "", thinking = false }: { className?: string; thinking?: boolean }) {
@@ -309,7 +310,7 @@ function AiAnswer({ text }: { text: string }) {
           paddingLeft: 10,
         }}
       >
-        “{text}”
+        “{stripMarkdown(text)}”
       </div>
     </details>
   );
@@ -2580,7 +2581,9 @@ function HistoryView({
             fontWeight: 600,
             cursor: "pointer",
             fontFamily: "inherit",
-            marginBottom: 16,
+            display: "block",
+            width: "fit-content",
+            margin: "6px 0 18px",
           }}
         >
           {t("hist.analyzeNew")}

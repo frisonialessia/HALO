@@ -1,4 +1,5 @@
 import type { Lang } from "@/types";
+import { stripMarkdown } from "@/lib/text";
 
 // Chat REAL del asistente Halo: responde preguntas libres del usuario sobre
 // AEO/GEO/LLMO y, si hay un análisis, sobre SU negocio con datos reales.
@@ -97,7 +98,7 @@ async function chatGemini(system: string, messages: ChatTurn[]): Promise<string>
     .join("")
     .trim();
   if (!text) throw new Error("Gemini chat: respuesta vacía");
-  return text;
+  return stripMarkdown(text);
 }
 
 async function chatPerplexity(system: string, messages: ChatTurn[]): Promise<string> {
@@ -115,5 +116,5 @@ async function chatPerplexity(system: string, messages: ChatTurn[]): Promise<str
   const data = await res.json();
   const text: string = (data?.choices?.[0]?.message?.content ?? "").trim();
   if (!text) throw new Error("Perplexity chat: respuesta vacía");
-  return text;
+  return stripMarkdown(text);
 }

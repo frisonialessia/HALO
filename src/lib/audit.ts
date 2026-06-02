@@ -3,6 +3,9 @@ import { buildQueries } from "@/lib/queries";
 import { probePerplexity } from "@/lib/engines/perplexity";
 import { probeChatGPT } from "@/lib/engines/openai";
 import { probeGemini } from "@/lib/engines/gemini";
+import { probeClaude } from "@/lib/engines/anthropic";
+import { probeGrok } from "@/lib/engines/xai";
+import { probeDeepSeek } from "@/lib/engines/deepseek";
 
 // Orquesta una auditoría completa de un negocio sobre TODOS los motores
 // disponibles. El Share of Answer se promedia entre los resultados de todos.
@@ -21,6 +24,12 @@ function activeEngines(): { engine: Engine; probe: EngineProbe }[] {
     list.push({ engine: "chatgpt", probe: probeChatGPT });
   if (process.env.GEMINI_API_KEY)
     list.push({ engine: "gemini", probe: probeGemini });
+  if (process.env.ANTHROPIC_API_KEY)
+    list.push({ engine: "claude", probe: probeClaude });
+  if (process.env.XAI_API_KEY)
+    list.push({ engine: "grok", probe: probeGrok });
+  if (process.env.DEEPSEEK_API_KEY)
+    list.push({ engine: "deepseek", probe: probeDeepSeek });
 
   // Si no hay ninguna clave, intentamos Perplexity igual: lanzará un error
   // claro ("Falta PERPLEXITY_API_KEY") en lugar de devolver vacío en silencio.
