@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
 import { addHistory, listHistory, removeHistory, type HistoryEntry } from "@/lib/history";
 import { isValidEmail, rememberLeadEmail, savedLeadEmail, submitLead } from "@/lib/lead";
-import { DEMO_AUDIT } from "@/lib/mock";
+import { DEMO_AUDIT, mockAudit } from "@/lib/mock";
 import { loadPrefs, savePrefs } from "@/lib/prefs";
 
 // ============== Orbe (logo) ==============
@@ -101,7 +101,8 @@ type AuditData = {
   shareOfAnswer: number; // 0..1 → "X de 10"
   byEngine: Record<string, number>;
   probes?: { query: string; appeared: boolean; position?: number }[];
-  demo?: boolean; // true → estado simulado (escaparate completo, sin API)
+  demo?: boolean; // estado de ejemplo fijo (Osteria, escaparate)
+  preview?: boolean; // simulación personalizada de la marca del visitante
 };
 type AiAssets = {
   description: string;
@@ -454,6 +455,7 @@ export default function HaloApp() {
   const [analyzingLabel, setAnalyzingLabel] = useState("tu negocio");
   const [history, setHistory] = useState<HistoryEntry<AuditData>[]>([]);
   const bizInputRef = useRef<HTMLInputElement>(null);
+  const [previewInput, setPreviewInput] = useState("");
 
   useEffect(() => {
     if (screen !== "landing") return;
@@ -488,25 +490,46 @@ export default function HaloApp() {
   }
 
   // Análisis REAL: identifica lo que pega el usuario y mide su presencia.
-  async function startAudit() {
+  // "Analizar" (landing): muestra AL INSTANTE una vista previa SIMULADA y
+  // personalizada con su marca — sin API, coste 0. El análisis real se
+  // desbloquea con el email (runRealAnalysis).
+  function startAudit() {
     const input = bizInput.trim();
     if (!input) return;
+    setPreviewInput(input);
     setAnalyzingLabel(input);
     setAuditErr("");
     setAudit(null);
+    setScreen("loading");
+    setLoadDone(-1);
+    LOAD_STEPS.forEach((_, i) => {
+      setTimeout(() => setLoadDone(i), 350 + i * 480);
+    });
+    setTimeout(() => {
+      setAudit(mockAudit(input));
+      setScreen("app");
+      setView("halo");
+    }, 350 + 4 * 480 + 250);
+  }
+
+  // Análisis REAL (Perplexity), desbloqueado con el email; reemplaza la preview.
+  async function runRealAnalysis(input: string) {
+    const q = input.trim();
+    if (!q) return;
+    setAnalyzingLabel(q);
+    setAuditErr("");
     setScreen("loading");
     const stop = runLoadingSteps();
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input }),
+        body: JSON.stringify({ input: q }),
       });
       const data = await res.json();
       stop();
       if (data?.needManual) {
-        // La IA no reconoce el negocio (nuevo/pequeño): se completa en Ajustes.
-        setPrefillName(/^https?:\/\//i.test(input) ? "" : input);
+        setPrefillName(/^https?:\/\//i.test(q) ? "" : q);
         setScreen("app");
         setView("set");
         return;
@@ -523,6 +546,13 @@ export default function HaloApp() {
       setAuditErr(e instanceof Error ? e.message : "No se pudo analizar");
       setScreen("landing");
     }
+  }
+
+  // Desbloquear: captura el email y corre el análisis real del negocio del preview.
+  function unlockReal(email: string) {
+    rememberLeadEmail(email);
+    void submitLead(email, { business: previewInput, source: "unlock" });
+    runRealAnalysis(previewInput);
   }
 
   // Análisis con los datos a mano (desde Ajustes, para negocios que la IA
@@ -779,10 +809,110 @@ export default function HaloApp() {
           history={history}
           onSelectAudit={selectFromHistory}
           onNewAnalysis={newAnalysis}
+          onUnlock={unlockReal}
           onRemoveHistory={removeFromHistory}
         />
       )}
     </>
+  );
+}
+
+// Barra de "desbloquear análisis real" sobre la vista previa simulada:
+// captura el email y dispara el análisis real del negocio.
+function UnlockBar({
+  name,
+  onUnlock,
+}: {
+  name: string;
+  onUnlock: (email: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [err, setErr] = useState("");
+
+  function go() {
+    const saved = savedLeadEmail();
+    if (saved) {
+      onUnlock(saved);
+      return;
+    }
+    setErr("");
+    setOpen(true);
+  }
+  function submit() {
+    if (!isValidEmail(email)) {
+      setErr("Pon un email válido.");
+      return;
+    }
+    onUnlock(email.trim());
+  }
+
+  const bar: CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    flexWrap: "wrap",
+    padding: "10px 20px",
+    background: "#FFF4EF",
+    borderBottom: "1px solid var(--gline)",
+    fontSize: 13,
+    fontWeight: 600,
+    color: "var(--text)",
+  };
+  const btn: CSSProperties = {
+    border: "none",
+    background: "var(--text)",
+    color: "#fff",
+    borderRadius: 999,
+    padding: "7px 16px",
+    fontSize: 12.5,
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  };
+
+  return (
+    <div style={bar}>
+      {!open ? (
+        <>
+          <span>
+            Esto es una <b>estimación</b> para <b>{name}</b>. Desbloquea tu análisis real, gratis.
+          </span>
+          <button type="button" onClick={go} style={btn}>
+            Ver mi análisis real →
+          </button>
+        </>
+      ) : (
+        <>
+          <span>Te enviamos tu informe real al correo:</span>
+          <input
+            type="email"
+            placeholder="tu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submit();
+            }}
+            style={{
+              border: "1px solid var(--gline)",
+              borderRadius: 8,
+              padding: "8px 12px",
+              fontSize: 13,
+              fontWeight: 500,
+              outline: "none",
+              background: "#fff",
+              fontFamily: "inherit",
+              minWidth: 180,
+            }}
+          />
+          <button type="button" onClick={submit} style={btn}>
+            Desbloquear →
+          </button>
+          {err && <span style={{ color: "var(--deep)", fontWeight: 500 }}>{err}</span>}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -800,6 +930,7 @@ function AppShell({
   history,
   onSelectAudit,
   onNewAnalysis,
+  onUnlock,
   onRemoveHistory,
 }: {
   view: View;
@@ -814,6 +945,7 @@ function AppShell({
   history: HistoryEntry<AuditData>[];
   onSelectAudit: (e: HistoryEntry<AuditData>) => void;
   onNewAnalysis: () => void;
+  onUnlock: (email: string) => void;
   onRemoveHistory: (id: string) => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
@@ -886,6 +1018,8 @@ function AppShell({
           </div>
         </div>
       </header>
+
+      {audit?.preview && <UnlockBar name={audit.business.name} onUnlock={onUnlock} />}
 
       {audit?.demo && (
         <div
@@ -1098,8 +1232,8 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
     setErr("");
     setLoading(true);
     try {
-      if (!audit || audit.demo) {
-        // Demo: ejemplo instantáneo, sin llamar a la API de pago.
+      if (!audit || audit.demo || audit.preview) {
+        // Demo o preview simulada: ejemplo instantáneo, sin API de pago.
         await new Promise((r) => setTimeout(r, 850));
         setAssets(SAMPLE_ASSETS);
         return;
@@ -1430,7 +1564,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
               ))}
             </>
           )}
-          <AssetsSection audit={audit} />
+          {!audit?.preview && <AssetsSection audit={audit} />}
         </div>
       </div>
 

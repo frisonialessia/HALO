@@ -14,7 +14,8 @@ export interface MockAudit {
   shareOfAnswer: number; // 0..1
   byEngine: Record<string, number>;
   probes: MockProbe[];
-  demo: true; // marca: estado simulado (escaparate completo, sin API)
+  demo?: boolean; // escaparate de ejemplo fijo (Osteria)
+  preview?: boolean; // simulación personalizada de la marca del visitante
 }
 
 // PRNG sembrado (xfnv1a + mulberry32): el mismo input da SIEMPRE los mismos
@@ -60,8 +61,15 @@ export function mockAudit(
   business?: Partial<MockAudit["business"]>
 ): MockAudit {
   const rnd = seeded(input.trim().toLowerCase() || "halo");
+  // Nombre legible: si pegan una URL, usamos el dominio.
+  const cleanName =
+    input
+      .trim()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .replace(/\/.*$/, "") || "Tu negocio";
   const biz = {
-    name: business?.name || input.trim() || "Tu negocio",
+    name: business?.name || cleanName,
     business_type: business?.business_type || "negocio local",
     city: business?.city,
     website: business?.website,
@@ -85,7 +93,7 @@ export function mockAudit(
       gemini: jitter(shareOfAnswer * 0.8),
     },
     probes,
-    demo: true,
+    preview: true,
   };
 }
 
