@@ -92,6 +92,12 @@ function AiIcon() {
 type Screen = "landing" | "loading" | "app";
 type View = "halo" | "dash" | "set";
 type Msg = { role: "bot" | "me"; text: ReactNode; think?: string };
+type AuditData = {
+  business: { name: string; business_type: string; city?: string };
+  shareOfAnswer: number; // 0..1 → "X de 10"
+  byEngine: Record<string, number>;
+  probes?: { query: string; appeared: boolean; position?: number }[];
+};
 
 // ============== Datos demo ==============
 const SECTORS = ["Restaurantes", "Clínicas", "SaaS", "Hoteles"];
@@ -243,6 +249,13 @@ export default function HaloApp() {
   const [sectorIdx, setSectorIdx] = useState(0);
   const [loadDone, setLoadDone] = useState<number>(-1);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [bizInput, setBizInput] = useState("");
+  const [audit, setAudit] = useState<AuditData | null>(null);
+  const [auditErr, setAuditErr] = useState("");
+  const [manual, setManual] = useState(false);
+  const [mName, setMName] = useState("");
+  const [mType, setMType] = useState("");
+  const [mCity, setMCity] = useState("");
 
   useEffect(() => {
     if (screen !== "landing") return;
@@ -250,7 +263,93 @@ export default function HaloApp() {
     return () => clearInterval(t);
   }, [screen]);
 
-  function startAudit() {
+  // Anima los pasos de carga mientras esperamos la respuesta real (no termina solo).
+  function runLoadingSteps(): () => void {
+    setLoadDone(0);
+    let step = 0;
+    const t = setInterval(() => {
+      step = Math.min(step + 1, LOAD_STEPS.length - 1);
+      setLoadDone(step);
+    }, 1600);
+    return () => clearInterval(t);
+  }
+
+  // Análisis REAL: identifica lo que pega el usuario y mide su presencia.
+  async function startAudit() {
+    const input = bizInput.trim();
+    if (!input) return;
+    setAuditErr("");
+    setManual(false);
+    setAudit(null);
+    setScreen("loading");
+    const stop = runLoadingSteps();
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input }),
+      });
+      const data = await res.json();
+      stop();
+      if (data?.needManual) {
+        // La IA no reconoce el negocio (nuevo/pequeño): lo pedimos a mano.
+        setMName(/^https?:\/\//i.test(input) ? "" : input);
+        setScreen("landing");
+        setManual(true);
+        return;
+      }
+      if (!res.ok) throw new Error(data?.error || "No se pudo analizar");
+      setLoadDone(LOAD_STEPS.length - 1);
+      setAudit(data as AuditData);
+      setScreen("app");
+      setView("halo");
+    } catch (e) {
+      stop();
+      setAuditErr(e instanceof Error ? e.message : "No se pudo analizar");
+      setScreen("landing");
+    }
+  }
+
+  // Análisis con los datos a mano (negocio que la IA aún no conoce).
+  async function startManualAudit() {
+    const name = mName.trim();
+    const business_type = mType.trim();
+    if (!name || !business_type) {
+      setAuditErr("Pon al menos el nombre y el tipo de negocio.");
+      return;
+    }
+    setAuditErr("");
+    setAudit(null);
+    setScreen("loading");
+    const stop = runLoadingSteps();
+    try {
+      const res = await fetch("/api/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, business_type, city: mCity.trim() }),
+      });
+      const data = await res.json();
+      stop();
+      if (!res.ok) throw new Error(data?.error || "No se pudo analizar");
+      setLoadDone(LOAD_STEPS.length - 1);
+      setAudit({
+        business: { name, business_type, city: mCity.trim() || undefined },
+        ...data,
+      } as AuditData);
+      setManual(false);
+      setScreen("app");
+      setView("halo");
+    } catch (e) {
+      stop();
+      setAuditErr(e instanceof Error ? e.message : "No se pudo analizar");
+      setScreen("landing");
+    }
+  }
+
+  // Demo sin coste: la animación de siempre con los datos de ejemplo.
+  function startDemo() {
+    setAudit(null);
+    setManual(false);
     setScreen("loading");
     setLoadDone(-1);
     LOAD_STEPS.forEach((_, i) => {
@@ -302,9 +401,58 @@ export default function HaloApp() {
               acción necesario para dominar los resultados.
             </p>
             <div className="glass lsearch">
-              <input placeholder="Pega tu web, Google Maps o tu Instagram" autoComplete="off" />
+              <input
+                placeholder="Pega tu web, Google Maps o tu Instagram"
+                autoComplete="off"
+                value={bizInput}
+                onChange={(e) => setBizInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") startAudit();
+                }}
+              />
               <button onClick={startAudit}>Analizar</button>
             </div>
+            {auditErr && (
+              <div style={{ marginTop: 12, fontSize: 13, fontWeight: 500, color: "var(--text-2)" }}>
+                {auditErr}
+              </div>
+            )}
+            {manual && (
+              <div
+                className="glass"
+                style={{ maxWidth: 640, margin: "14px auto 0", padding: 18, textAlign: "left" }}
+              >
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)", marginBottom: 12 }}>
+                  La IA todavía no reconoce tu negocio. Cuéntanoslo y lo medimos igual:
+                </div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  <input
+                    placeholder="Nombre del negocio"
+                    value={mName}
+                    onChange={(e) => setMName(e.target.value)}
+                    style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
+                  />
+                  <input
+                    placeholder="Tipo (ej. restaurante italiano)"
+                    value={mType}
+                    onChange={(e) => setMType(e.target.value)}
+                    style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
+                  />
+                  <input
+                    placeholder="Ciudad"
+                    value={mCity}
+                    onChange={(e) => setMCity(e.target.value)}
+                    style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
+                  />
+                  <button
+                    onClick={startManualAudit}
+                    style={{ border: "none", background: "#000", color: "#fff", borderRadius: 6, padding: "12px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    Analizar mi negocio
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="sectors">
               Ayudando a negocios a dominar la visibilidad en{" "}
               <b>{SECTORS[sectorIdx]}</b>
@@ -314,13 +462,13 @@ export default function HaloApp() {
               <span className="sep" />
               <span
                 style={{ cursor: "pointer", color: "var(--text)", fontWeight: 600 }}
-                onClick={startAudit}
+                onClick={startDemo}
               >
                 Probar con un ejemplo →
               </span>
             </div>
           </div>
-          <div className="landing-teaser" onClick={startAudit}>
+          <div className="landing-teaser" onClick={startDemo}>
             <span className="lt-text">Esto está diciendo ChatGPT sobre tu negocio</span>
             <Orb className="lt-orb" />
           </div>
@@ -377,6 +525,7 @@ export default function HaloApp() {
           setScreen={setScreen}
           menuOpen={menuOpen}
           setMenuOpen={setMenuOpen}
+          audit={audit}
         />
       )}
     </>
@@ -390,12 +539,14 @@ function AppShell({
   setScreen,
   menuOpen,
   setMenuOpen,
+  audit,
 }: {
   view: View;
   setView: (v: View) => void;
   setScreen: (s: Screen) => void;
   menuOpen: boolean;
   setMenuOpen: (b: boolean) => void;
+  audit: AuditData | null;
 }) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -461,8 +612,8 @@ function AppShell({
       </header>
 
       <div className="stage">
-        {view === "halo" && <HaloView />}
-        {view === "dash" && <DashView />}
+        {view === "halo" && <HaloView audit={audit} />}
+        {view === "dash" && <DashView audit={audit} />}
         {view === "set" && <SettingsView setView={setView} />}
       </div>
 
@@ -486,7 +637,9 @@ function FloatingFab({ hidden, onClick }: { hidden: boolean; onClick: () => void
 }
 
 // ============== Vista HALO (asistente) ==============
-function HaloView() {
+function HaloView({ audit }: { audit: AuditData | null }) {
+  const score = audit ? Math.round(audit.shareOfAnswer * 10) : 3;
+  const bizName = audit?.business.name ?? "tu negocio";
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -502,7 +655,7 @@ function HaloView() {
           think: "Analizando tu negocio…",
           text: (
             <>
-              Vamos a optimizar tu posición en las IAs. Consulté a ChatGPT, Perplexity, Gemini y Claude: hoy te recomiendan <b>3 de cada 10 veces</b> y al líder de tu zona 6 de 10. Tengo 3 acciones concretas para que te elijan más. Si tienes dudas sobre AEO o cómo funciona esto, pregúntame primero; si no, empezamos por la de mayor impacto.
+              Analicé la presencia de <b>{bizName}</b> en Perplexity: hoy te recomiendan <b>{score} de cada 10 veces</b>. Tengo acciones concretas para que te elijan más. Si tienes dudas sobre AEO o cómo funciona esto, pregúntame primero; si no, empezamos por la de mayor impacto.
             </>
           ),
         },
@@ -535,7 +688,7 @@ function HaloView() {
         <div className="lhead">
           <div className="auto">
             <span className="pulse" />
-            Lo que la IA entiende de tu negocio
+            Lo que la IA entiende de {bizName}
           </div>
           <button className="histbtn" type="button">
             <Ic ic="clock" size={12} />
@@ -545,8 +698,8 @@ function HaloView() {
         <div className="lbody">
           <div className="metric">
             <div className="metric-row">
-              <span className="metric-n">3 de 10</span>
-              <span className="metric-trend">+1 esta semana</span>
+              <span className="metric-n">{score} de 10</span>
+              {!audit && <span className="metric-trend">+1 esta semana</span>}
             </div>
             <div className="metric-lbl">
               Cuánto te eligen cuando buscan un negocio como el tuyo
@@ -641,12 +794,17 @@ function HaloView() {
 }
 
 // ============== Vista DASHBOARD (monocromo) ==============
-function DashView() {
+function DashView({ audit }: { audit: AuditData | null }) {
+  const score = audit ? Math.round(audit.shareOfAnswer * 10) : 3;
   return (
     <>
       <div className="dhead">
         <div>
-          <div className="dhead-sub">Tu negocio · Milán · en directo</div>
+          <div className="dhead-sub">
+            {audit
+              ? `${audit.business.name}${audit.business.city ? " · " + audit.business.city : ""} · en directo`
+              : "Tu negocio · Milán · en directo"}
+          </div>
           <h1 className="dhead-title">Visibilidad ante la IA</h1>
         </div>
         <div className="dhead-actions">
@@ -664,7 +822,7 @@ function DashView() {
             <span className="dpill-up">+1 vs. semana pasada</span>
           </div>
           <div className="hero-num">
-            <span className="accent-grad">3</span>
+            <span className="accent-grad">{score}</span>
             <span className="hero-den">/ 10</span>
             <span className="hero-cap">respuestas te mencionan</span>
           </div>
