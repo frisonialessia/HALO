@@ -52,6 +52,8 @@
   .ainav .ai-ic{width:22px;height:22px;border-radius:50%;background:#FBF9F8;border:1px solid var(--gline);display:grid;place-items:center}
   .ainav .ai-ic svg{width:12px;height:12px}
   @media(max-width:980px){.ainav{display:none}}
+  .ainav-hero{display:none}
+  @media(max-width:980px){.ainav-hero{display:inline-flex;margin:0 0 20px}}
   .lnav-links a{text-decoration:none;color:inherit;cursor:pointer;transition:.2s}
   .lnav-links a:not(.enter):hover{color:var(--text)}
   .lnav-links .enter{background:#000;color:#fff;padding:11px 24px;border-radius:999px;font-weight:700;transition:.2s}
@@ -281,9 +283,9 @@
     #s-landing nav { padding: 15px 18px; gap: 10px; }
     .lbrand { font-size: 19px; gap: 9px; }
     .lbrand .dot { width: 26px; height: 26px; }
-    .lnav-links { gap: 12px; }
-    .lnav-links a:not(.enter) { display: none; }   /* enlace "Cómo funciona" */
+    .lnav-links { gap: 14px; }
     .lnav-links .enter { padding: 9px 17px; }
+    .langsel { display: none; }   /* selector EN/ES oculto en móvil (idioma autodetectado) */
 
     /* Landing — hero */
     .lstage { padding: 26px 18px 50px; min-height: calc(100vh - 70px); }

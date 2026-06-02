@@ -155,6 +155,14 @@ const D: Record<string, Entry> = {
   },
   "chat.sug.byEngine": { en: "How am I doing by engine?", es: "¿Cómo voy por motor?" },
   "chat.sug.genCopy": { en: "Generate my optimized copy", es: "Genérame el texto optimizado" },
+  "chat.sug.aeo": { en: "What is AEO?", es: "¿Qué es AEO?" },
+  "chat.sug.halo": { en: "What does Halo do?", es: "¿Qué hace Halo?" },
+  "chat.sug.llmo": { en: "What is LLMO?", es: "¿Qué es LLMO?" },
+  "chat.demoThink": { en: "Welcome", es: "Bienvenido" },
+  "chat.demoBoot": {
+    en: 'Hi! I\'m Halo. I help you show up when customers ask AI for a business like yours. Ask me "what is AEO?" or "what is LLMO?", or paste your business to see your visibility.',
+    es: "¡Hola! Soy Halo. Te ayudo a aparecer cuando los clientes preguntan a la IA por un negocio como el tuyo. Pregúntame «qué es AEO» o «qué es LLMO», o pega tu negocio para ver tu visibilidad.",
+  },
 
   // ---- Report (HALO view) ----
   "report.whatAI": {

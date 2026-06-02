@@ -117,6 +117,57 @@ const KNOW_ITEMS: { ok: boolean; tk: string; dk: string; op?: boolean }[] = [
 function pickAnswer(q: string, lang: Lang): ReactNode {
   const s = q.toLowerCase();
   const es = lang === "es";
+  // ¿Qué es AEO? — educativo
+  if (/\baeo\b|answer engine/.test(s))
+    return es ? (
+      <>
+        <b>AEO (Answer Engine Optimization)</b> es aparecer en la respuesta cuando alguien le
+        pregunta a una IA «¿cuál es el mejor…?». Es la evolución del SEO: ya no basta con rankear en
+        Google; ahora hay que estar en la respuesta de ChatGPT, Perplexity y Gemini. Halo mide cuántas
+        veces te recomiendan y te da el plan para subir.
+      </>
+    ) : (
+      <>
+        <b>AEO (Answer Engine Optimization)</b> is showing up in the answer when someone asks an AI
+        &quot;what&apos;s the best…?&quot;. It&apos;s the evolution of SEO: ranking on Google is no
+        longer enough — you also need to be in ChatGPT, Perplexity and Gemini&apos;s answer. Halo
+        measures how often you&apos;re recommended and gives you the plan to climb.
+      </>
+    );
+  // ¿Qué es LLMO? — educativo
+  if (/\bllmo\b|large language|c[oó]mo.*describe|how.*describe/.test(s))
+    return es ? (
+      <>
+        <b>LLMO (Large Language Model Optimization)</b> es optimizar cómo los modelos de IA entienden y
+        describen tu negocio: darles tus datos bien estructurados (qué eres, dónde estás y qué te hace
+        especial) para que te interpreten bien y te citen con seguridad. Halo te genera ese texto listo
+        para publicar.
+      </>
+    ) : (
+      <>
+        <b>LLMO (Large Language Model Optimization)</b> is optimizing how AI models understand and
+        describe your business: giving them well-structured data (what you are, where you are, what
+        makes you special) so they interpret you correctly and cite you confidently. Halo generates
+        that ready-to-publish copy for you.
+      </>
+    );
+  // ¿Qué es Halo / GEO / cómo funciona?
+  if (/qu[eé] es|qu[eé] hace|c[oó]mo funciona|para qu[eé]|\bgeo\b|what is|what do you|what.*halo|how.*work/.test(s))
+    return es ? (
+      <>
+        Halo mide tu visibilidad en la búsqueda con IA: pregunta a ChatGPT, Perplexity y Gemini como lo
+        haría un cliente y ve cuántas veces te recomiendan. Luego te da el plan y el texto optimizado
+        para que te elijan más. Pregúntame «¿qué es AEO?» o «¿qué es LLMO?», o pega tu negocio arriba
+        para empezar.
+      </>
+    ) : (
+      <>
+        Halo measures your visibility in AI search: it asks ChatGPT, Perplexity and Gemini like a
+        customer would and sees how often they recommend you. Then it gives you the plan and optimized
+        copy to get chosen more. Ask me &quot;what is AEO?&quot; or &quot;what is LLMO?&quot;, or paste
+        your business above to start.
+      </>
+    );
   if (/aparezco|b[uú]squeda|appear|search/.test(s))
     return es
       ? "Cobertura actual: ChatGPT te menciona en 2 de las 5 búsquedas más frecuentes; Perplexity en 3. El resto son oportunidades sin cubrir."
@@ -580,10 +631,16 @@ export default function HaloApp() {
     setHistory(listHistory<AuditData>());
   }, []);
 
-  // Idioma: inglés por defecto; carga el guardado y sincroniza <html lang>.
+  // Idioma: si el usuario ya eligió, se respeta; si no, se detecta el del
+  // navegador (es → español; el resto, inglés). Sincroniza <html lang>.
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("halo:lang") : null;
-    if (saved === "es" || saved === "en") setLang(saved);
+    if (typeof window === "undefined") return;
+    const saved = localStorage.getItem("halo:lang");
+    if (saved === "es" || saved === "en") {
+      setLang(saved);
+    } else if ((navigator.language || "").toLowerCase().startsWith("es")) {
+      setLang("es");
+    }
   }, []);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -784,7 +841,7 @@ export default function HaloApp() {
               <a className="enter" onClick={enterApp}>
                 {tr("nav.enter")}
               </a>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, marginLeft: 2 }}>
+              <span className="langsel" style={{ display: "inline-flex", alignItems: "center", gap: 3, marginLeft: 2 }}>
                 <button
                   type="button"
                   onClick={() => setLang("en")}
@@ -805,6 +862,21 @@ export default function HaloApp() {
           </nav>
           <div className="lhero">
           <div className="lstage">
+            <div className="ainav ainav-hero">
+              {tr("nav.ask")}
+              <span className="ai-ic">
+                <img src="/icons/openai.svg" alt="ChatGPT" width={13} height={13} />
+              </span>
+              <span className="ai-ic">
+                <img src="/icons/claude.svg" alt="Claude" width={13} height={13} />
+              </span>
+              <span className="ai-ic">
+                <img src="/icons/perplexity.svg" alt="Perplexity" width={13} height={13} />
+              </span>
+              <span className="ai-ic">
+                <img src="/icons/grok.svg" alt="Grok" width={13} height={13} />
+              </span>
+            </div>
             <div className="eyebrow">AEO • LLMO • Local Intelligence</div>
             <h1>
               {tr("hero.titleA")} <span className="g">{tr("hero.titleB")}</span>.
@@ -1725,7 +1797,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
   const missedProbes = realProbes.filter((p) => !p.appeared);
   const suggestions = audit
     ? [t("chat.sug.missing"), t("chat.sug.byEngine"), t("chat.sug.genCopy")]
-    : [t("chat.sug.appear"), t("chat.sug.romantic"), t("chat.sug.osteria")];
+    : [t("chat.sug.aeo"), t("chat.sug.halo"), t("chat.sug.llmo")];
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -1736,16 +1808,22 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
     setThinking(true);
     const tm = setTimeout(() => {
       setMessages([
-        {
-          role: "bot",
-          think: t("chat.bootThink"),
-          text: (
-            <>
-              {t("chat.bootA")} <b>{bizName}</b> {lang === "es" ? "en" : "in"} {enginesLabel}:{" "}
-              {scoreLine(score, lang)} {t("chat.bootTail")}
-            </>
-          ),
-        },
+        audit
+          ? {
+              role: "bot",
+              think: t("chat.bootThink"),
+              text: (
+                <>
+                  {t("chat.bootA")} <b>{bizName}</b> {lang === "es" ? "en" : "in"} {enginesLabel}:{" "}
+                  {scoreLine(score, lang)} {t("chat.bootTail")}
+                </>
+              ),
+            }
+          : {
+              role: "bot",
+              think: t("chat.demoThink"),
+              text: t("chat.demoBoot"),
+            },
       ]);
       setThinking(false);
     }, 900);
