@@ -27,8 +27,17 @@ export interface AssetsInput {
 
 export async function generateAssets(input: AssetsInput, lang: Lang = "en"): Promise<AiAssets> {
   const { system, user } = buildPrompt(input, lang);
-  if (process.env.GEMINI_API_KEY) return generateWithGemini(system, user);
-  if (process.env.PERPLEXITY_API_KEY) return generateWithPerplexity(system, user);
+  const hasG = !!process.env.GEMINI_API_KEY;
+  const hasP = !!process.env.PERPLEXITY_API_KEY;
+  if (hasG) {
+    try {
+      return await generateWithGemini(system, user);
+    } catch (err) {
+      if (!hasP) throw err;
+      console.error("[assets] Gemini failed, falling back to Perplexity:", err);
+    }
+  }
+  if (hasP) return generateWithPerplexity(system, user);
   throw new Error("No hay proveedor de IA configurado (define GEMINI_API_KEY o PERPLEXITY_API_KEY)");
 }
 

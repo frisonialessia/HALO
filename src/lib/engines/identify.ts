@@ -38,8 +38,17 @@ export async function identifyBusiness(
   input: string,
   lang: Lang = "en"
 ): Promise<IdentifiedBusiness> {
-  if (process.env.GEMINI_API_KEY) return identifyWithGemini(input, lang);
-  if (process.env.PERPLEXITY_API_KEY) return identifyWithPerplexity(input, lang);
+  const hasG = !!process.env.GEMINI_API_KEY;
+  const hasP = !!process.env.PERPLEXITY_API_KEY;
+  if (hasG) {
+    try {
+      return await identifyWithGemini(input, lang);
+    } catch (err) {
+      if (!hasP) throw err;
+      console.error("[identify] Gemini failed, falling back to Perplexity:", err);
+    }
+  }
+  if (hasP) return identifyWithPerplexity(input, lang);
   throw new Error("No hay proveedor de IA configurado (define GEMINI_API_KEY o PERPLEXITY_API_KEY)");
 }
 

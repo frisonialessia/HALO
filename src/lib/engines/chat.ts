@@ -58,8 +58,17 @@ export async function chatReply(
   biz?: ChatBusiness
 ): Promise<string> {
   const system = systemPrompt(lang, biz);
-  if (process.env.GEMINI_API_KEY) return chatGemini(system, messages);
-  if (process.env.PERPLEXITY_API_KEY) return chatPerplexity(system, messages);
+  const hasG = !!process.env.GEMINI_API_KEY;
+  const hasP = !!process.env.PERPLEXITY_API_KEY;
+  if (hasG) {
+    try {
+      return await chatGemini(system, messages);
+    } catch (err) {
+      if (!hasP) throw err;
+      console.error("[chat] Gemini failed, falling back to Perplexity:", err);
+    }
+  }
+  if (hasP) return chatPerplexity(system, messages);
   throw new Error("No hay proveedor de IA configurado (define GEMINI_API_KEY o PERPLEXITY_API_KEY)");
 }
 
