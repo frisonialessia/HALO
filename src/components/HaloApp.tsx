@@ -673,35 +673,23 @@ export default function HaloApp() {
     return () => clearInterval(t);
   }
 
-  // Análisis REAL: identifica lo que pega el usuario y mide su presencia.
-  // "Analizar" (landing): muestra AL INSTANTE una vista previa SIMULADA y
-  // personalizada con su marca — sin API, coste 0. El análisis real se
-  // desbloquea con el email (runRealAnalysis).
+  // "Analizar" (landing): lanza el análisis REAL directamente. Sin email ni
+  // fricción. Si la IA falla o no reconoce el negocio, cae a una simulación
+  // personalizada para que la demo nunca se quede en blanco.
   function startAudit() {
-    const input = bizInput.trim();
-    if (!input) return;
-    setPreviewInput(input);
-    setAnalyzingLabel(input);
-    setAuditErr("");
-    setAudit(null);
-    setScreen("loading");
-    setLoadDone(-1);
-    LOAD_STEPS.forEach((_, i) => {
-      setTimeout(() => setLoadDone(i), 350 + i * 480);
-    });
-    setTimeout(() => {
-      setAudit(mockAudit(input, lang));
-      setScreen("app");
-      setView("halo");
-    }, 350 + 4 * 480 + 250);
+    setPreviewInput(bizInput.trim());
+    runRealAnalysis(bizInput);
   }
 
-  // Análisis REAL (Perplexity), desbloqueado con el email; reemplaza la preview.
+  // Análisis REAL: identifica el negocio (Google/Gemini o Perplexity) y mide su
+  // presencia en la IA. Ante cualquier fallo (sin proveedor, IA caída o negocio
+  // no reconocido) cae a una simulación → la demo siempre muestra un resultado.
   async function runRealAnalysis(input: string) {
     const q = input.trim();
     if (!q) return;
     setAnalyzingLabel(q);
     setAuditErr("");
+    setAudit(null);
     setScreen("loading");
     const stop = runLoadingSteps();
     try {
@@ -711,25 +699,19 @@ export default function HaloApp() {
         body: JSON.stringify({ input: q, lang }),
       });
       const data = await res.json();
+      if (!res.ok || data?.needManual) throw new Error("fallback");
       stop();
-      if (data?.needManual) {
-        setPrefillName(/^https?:\/\//i.test(q) ? "" : q);
-        setScreen("app");
-        setView("set");
-        return;
-      }
-      if (!res.ok) throw new Error(data?.error || tr("err.analyze"));
       setLoadDone(LOAD_STEPS.length - 1);
       const auditData = data as AuditData;
       setAudit(auditData);
       setHistory(rememberAudit(auditData));
-      setScreen("app");
-      setView("halo");
-    } catch (e) {
+    } catch {
       stop();
-      setAuditErr(e instanceof Error ? e.message : tr("err.analyze"));
-      setScreen("landing");
+      setLoadDone(LOAD_STEPS.length - 1);
+      setAudit(mockAudit(q, lang));
     }
+    setScreen("app");
+    setView("halo");
   }
 
   // Desbloquear: captura el email y corre el análisis real del negocio del preview.
@@ -1572,14 +1554,9 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
     }
   }
 
-  // Si ya dejó su email antes, genera directo; si no, abre el email-gate.
+  // Demo sin fricción: genera el kit directamente, sin pedir email.
   function startGenerate() {
-    if (savedLeadEmail()) {
-      run();
-    } else {
-      setEmailErr("");
-      setGate(true);
-    }
+    run();
   }
 
   // Captura el email (alimenta el funnel) y genera. No bloquea si el registro falla.

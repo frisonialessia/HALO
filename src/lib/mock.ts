@@ -139,7 +139,6 @@ export function mockAudit(
       gemini: jitter(shareOfAnswer * 0.8),
     },
     probes,
-    preview: true,
   };
 }
 
