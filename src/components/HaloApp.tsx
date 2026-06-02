@@ -1233,6 +1233,47 @@ function CopyButton({ text }: { text: string }) {
 // Generador de "AI Assets": el botón que convierte el diagnóstico en acción.
 // Pide a la IA el texto optimizado (descripción + FAQ + acciones) listo para
 // copiar. En demo (sin auditoría real) muestra un ejemplo sin gastar API.
+// Construye el bloque de datos estructurados (JSON-LD schema.org) desde los
+// datos del negocio + las FAQ generadas. 100% local, sin API: es el bloque
+// técnico que el usuario pega en su web para que IA y Google lo entiendan.
+function buildSchema(
+  business: { name: string; business_type?: string; city?: string; website?: string },
+  description: string,
+  faqs: { q: string; a: string }[]
+): string {
+  const url = business.website
+    ? /^https?:\/\//i.test(business.website)
+      ? business.website
+      : `https://${business.website}`
+    : undefined;
+
+  const localBusiness: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: business.name,
+  };
+  if (description) localBusiness.description = description;
+  if (business.business_type) localBusiness.knowsAbout = business.business_type;
+  if (url) localBusiness.url = url;
+  if (business.city) localBusiness.areaServed = business.city;
+
+  const graph: unknown[] = [localBusiness];
+  if (faqs.length > 0) {
+    graph.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqs.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    });
+  }
+
+  const payload = graph.length === 1 ? graph[0] : graph;
+  return `<script type="application/ld+json">\n${JSON.stringify(payload, null, 2)}\n</script>`;
+}
+
 function AssetsSection({ audit }: { audit: AuditData | null }) {
   const [assets, setAssets] = useState<AiAssets | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1302,6 +1343,10 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
     setGate(false);
     run();
   }
+
+  const schema = assets
+    ? buildSchema(audit?.business ?? { name: "Tu negocio" }, assets.description, assets.faqs)
+    : "";
 
   return (
     <div style={{ marginTop: 26, paddingTop: 22, borderTop: "1px solid var(--gline)" }}>
@@ -1432,6 +1477,35 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
               </div>
             </div>
           )}
+
+          <div style={assetBoxStyle}>
+            <div style={assetHeadStyle}>
+              <span>Datos estructurados (Schema)</span>
+              <CopyButton text={schema} />
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5, marginBottom: 10 }}>
+              Pégalo en el HTML de tu web (en la cabecera). Hace que la IA y Google
+              entiendan tu negocio al instante.
+            </div>
+            <pre
+              style={{
+                margin: 0,
+                padding: "12px 14px",
+                background: "#fff",
+                border: "1px solid var(--gline)",
+                borderRadius: 8,
+                fontSize: 11.5,
+                lineHeight: 1.5,
+                color: "var(--text)",
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                overflow: "auto",
+                maxHeight: 220,
+                whiteSpace: "pre",
+              }}
+            >
+              {schema}
+            </pre>
+          </div>
 
           <button
             type="button"
