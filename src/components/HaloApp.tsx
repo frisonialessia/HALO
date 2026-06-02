@@ -192,10 +192,10 @@ const KEYWORDS: { yes: boolean; t: string }[] = [
 ];
 
 const IMPACT: { eng: string; v: number; d: string }[] = [
-  { eng: "ChatGPT", v: 62, d: "ya sabe tus platos" },
-  { eng: "Perplexity", v: 74, d: "te cita con reseñas" },
-  { eng: "Gemini", v: 48, d: "falta ubicación" },
-  { eng: "Claude", v: 55, d: "en progreso" },
+  { eng: "ChatGPT", v: 62, d: "Platos indexados" },
+  { eng: "Perplexity", v: 74, d: "Citado con reseñas" },
+  { eng: "Gemini", v: 48, d: "Falta ubicación" },
+  { eng: "Claude", v: 55, d: "En progreso" },
 ];
 
 // ============== Sparkline (canvas, 8 puntos, línea negra) ==============
@@ -295,9 +295,12 @@ export default function HaloApp() {
           <div className="lstage">
             <div className="eyebrow">AEO • LLMO • Local Intelligence</div>
             <h1>
-              Sé uno de los negocios que la <span className="g">IA</span> recomienda.
+              Inteligencia de datos para la <span className="g">búsqueda generativa</span>.
             </h1>
-            <p className="sub-title">Posiciónate donde tus clientes ya están buscando.</p>
+            <p className="sub-title">
+              Halo audita el rendimiento de tu marca en LLMs y te brinda el plan de
+              acción necesario para dominar los resultados.
+            </p>
             <div className="glass lsearch">
               <input placeholder="Pega tu web, Google Maps o tu Instagram" autoComplete="off" />
               <button onClick={startAudit}>Analizar</button>
@@ -650,9 +653,6 @@ function DashView() {
           <button className="dbtn-ghost" type="button">
             Últimos 7 días ▾
           </button>
-          <button className="dbtn-dark" type="button">
-            Exportar informe
-          </button>
         </div>
       </div>
 
@@ -715,17 +715,13 @@ function DashView() {
           <span className="dlink">Conectar más →</span>
         </div>
         <div className="engine-grid">
-          {ENGINES.map((e) => (
+          {ENGINES.filter((e) => !e.dim).map((e) => (
             <div className="eng" key={e.name}>
               <div className="eng-name">{e.name}</div>
-              {e.dim ? (
-                <div className="eng-num dim">—</div>
-              ) : (
-                <div className="eng-num">
-                  {e.n}
-                  <span>/10</span>
-                </div>
-              )}
+              <div className="eng-num">
+                {e.n}
+                <span>/10</span>
+              </div>
             </div>
           ))}
           <div className="eng eng-add">
@@ -758,7 +754,7 @@ function DashView() {
             ))}
           </div>
           <div className="dcard-foot">
-            Te separan <b>2 puntos</b> del líder. Halo sabe cómo cerrarlos.
+            Oportunidad de optimización: <b>2 puntos</b> para alcanzar al líder de tu zona.
           </div>
         </div>
 
@@ -928,7 +924,7 @@ function SettingsView({ setView }: { setView: (v: View) => void }) {
             </span>
             <div className="stxt">
               <b>Vigilar competencia</b>
-              <small>Te avisamos qué hacen tus rivales para salir antes que tú.</small>
+              <small>Te notificamos los movimientos de tus competidores para que te adelantes.</small>
             </div>
             <div
               className={`toggle ${modes.watch ? "on" : ""}`}
@@ -947,7 +943,7 @@ function SettingsView({ setView }: { setView: (v: View) => void }) {
             </span>
             <div className="stxt">
               <b>Modo automático</b>
-              <small>Halo aplica las mejoras solo y solo te avisa cuando logra algo.</small>
+              <small>Halo aplica las mejoras de forma automática y te notifica cada acción completada.</small>
             </div>
             <div
               className={`toggle ${modes.auto ? "on" : ""}`}

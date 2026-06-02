@@ -16,12 +16,12 @@ const config: Config = {
         line: "#ECE7E1",
       },
       borderRadius: {
-        input: "13px",
-        card: "16px",
-        btn: "12px",
+        input: "8px",
+        card: "8px",
+        btn: "6px",
       },
       fontFamily: {
-        sans: ["Montserrat", "system-ui", "sans-serif"],
+        sans: ["Geist", "system-ui", "sans-serif"],
       },
     },
   },
