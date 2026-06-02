@@ -134,9 +134,11 @@ export function mockAudit(
     business: biz,
     shareOfAnswer,
     byEngine: {
-      perplexity: jitter(shareOfAnswer),
       chatgpt: jitter(shareOfAnswer),
-      gemini: jitter(shareOfAnswer * 0.8),
+      perplexity: jitter(shareOfAnswer),
+      gemini: jitter(shareOfAnswer),
+      claude: jitter(shareOfAnswer),
+      grok: jitter(shareOfAnswer),
     },
     probes,
   };
