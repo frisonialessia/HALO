@@ -193,50 +193,172 @@ function uniqueProbes(
   return Array.from(map.values());
 }
 
-// Respuestas del chat con DATOS REALES (sin API), a partir de los probes del
-// análisis. Honesto sobre lo que aún no puede hacer.
-function answerReal(
-  q: string,
-  probes: { query: string; appeared: boolean; position?: number }[]
-): ReactNode {
+// Respuestas del chat con DATOS REALES (sin API), a partir del análisis:
+// cobertura, por motor, posición, qué es AEO, plan… Honesto sobre lo que aún
+// no hace (competencia/zonas/chat conversacional → en camino).
+function answerReal(q: string, audit: AuditData): ReactNode {
   const t = q.toLowerCase();
+  const probes = uniqueProbes(audit.probes ?? []);
   const got = probes.filter((p) => p.appeared);
   const missed = probes.filter((p) => !p.appeared);
+  const score = Math.round(audit.shareOfAnswer * 10);
+  const name = audit.business.name;
+  const engines = Object.entries(audit.byEngine);
   const ex = (arr: typeof probes) =>
     arr.slice(0, 3).map((m) => `"${m.query}"`).join(", ");
 
-  if (/no aparezco|no aparece|mejorar|qu[eé] hago|primero|falta/.test(t)) {
-    if (missed.length === 0)
-      return "Apareces en todas las búsquedas que probamos. El siguiente paso es reforzar tu posición y ampliar a más búsquedas.";
+  // Saludo
+  if (/^\s*(hola|buenas|hey|hi|holi)\b/.test(t)) {
     return (
       <>
-        No apareces en <b>{missed.length} de {probes.length}</b> búsquedas, por
-        ejemplo: {ex(missed)}. Genera tu texto optimizado en <b>&quot;Tu kit&quot;</b> (panel
-        izquierdo) para empezar a cubrirlas.
+        ¡Hola! Soy Halo. Hoy <b>{name}</b> aparece en <b>{got.length} de {probes.length}</b> búsquedas con
+        IA. Pregúntame en cuáles no apareces, cómo vas por motor, o pídeme que te genere el texto optimizado.
       </>
     );
   }
-  if (/aparezco|b[uú]squeda|presencia|cu[aá]nto|d[oó]nde/.test(t)) {
+
+  // Qué es / qué haces / cómo funciona / AEO
+  if (/qu[eé] es|qu[eé] haces|c[oó]mo funciona|\baeo\b|\bgeo\b|para qu[eé]|qu[eé] mides/.test(t)) {
+    return (
+      <>
+        Mido cuántas veces te recomiendan los buscadores con IA (ChatGPT, Perplexity, Gemini) cuando alguien
+        busca un negocio como el tuyo. Hoy te eligen <b>{score} de cada 10</b>. Mi trabajo es subir ese
+        número: te digo dónde no apareces y te genero el texto que la IA necesita para recomendarte.
+      </>
+    );
+  }
+
+  // Puntuación / cómo voy
+  if (/puntuaci|c[oó]mo voy|c[oó]mo estoy|qu[eé] tal|mi nota|mi score/.test(t)) {
+    return (
+      <>
+        Hoy te recomiendan <b>{score} de cada 10</b> veces ({got.length} de {probes.length} búsquedas).{" "}
+        {score <= 3
+          ? "Hay mucho margen y sé por dónde empezar."
+          : score <= 6
+          ? "Vas por buen camino; vamos a subirlo."
+          : "Dominas tu categoría; ahora a blindarla."}
+      </>
+    );
+  }
+
+  // Por motor
+  if (/motor|chatgpt|perplexity|gemini|en cu[aá]l|d[oó]nde.*mejor/.test(t)) {
+    if (engines.length === 0) return "Aún no tengo el desglose por motor de este análisis.";
+    const sorted = [...engines].sort((a, b) => b[1] - a[1]);
+    const best = sorted[0];
+    const worst = sorted[sorted.length - 1];
+    return (
+      <>
+        Por motor:{" "}
+        {sorted.map(([e, v], i) => (
+          <span key={e}>
+            {i ? ", " : ""}
+            <b>{ENGINE_LABELS[e] ?? e}</b> {Math.round(v * 10)}/10
+          </span>
+        ))}
+        . Donde mejor estás es <b>{ENGINE_LABELS[best[0]] ?? best[0]}</b>
+        {best[0] !== worst[0] ? (
+          <>
+            {" "}
+            y donde más margen tienes es <b>{ENGINE_LABELS[worst[0]] ?? worst[0]}</b>
+          </>
+        ) : null}
+        .
+      </>
+    );
+  }
+
+  // Posición / ranking
+  if (/posici[oó]n|puesto|ranking|\btop\b|n[uú]mero/.test(t)) {
+    const positions = got.map((p) => p.position).filter((x): x is number => !!x);
+    if (positions.length === 0)
+      return (
+        <>
+          Todavía no apareces en un puesto destacado en las búsquedas que probé. En cuanto cubramos las que
+          faltan, empezarás a escalar.
+        </>
+      );
+    const best = Math.min(...positions);
+    const top3 = got.filter((p) => (p.position ?? 99) <= 3).length;
+    return (
+      <>
+        Tu mejor posición es <b>#{best}</b>, y estás en el top 3 en <b>{top3}</b> de las búsquedas donde
+        apareces. Cuanto más arriba, más te eligen.
+      </>
+    );
+  }
+
+  // Dónde NO aparezco / mejorar / plan
+  if (/no aparezco|no aparece|no salgo|mejorar|qu[eé] hago|primero|prioridad|plan|acci[oó]n|falta/.test(t)) {
+    if (missed.length === 0)
+      return (
+        <>
+          Apareces en todas las búsquedas que probé — ¡enhorabuena! El siguiente paso es reforzar tu
+          posición. Pídeme el texto optimizado para consolidarlo.
+        </>
+      );
+    return (
+      <>
+        No apareces en <b>{missed.length} de {probes.length}</b> búsquedas, por ejemplo: {ex(missed)}.
+        Empieza por ahí: pulsa <b>&quot;Generar texto optimizado para IA&quot;</b> en &quot;Tu kit&quot; — uso justo esas
+        búsquedas.
+      </>
+    );
+  }
+
+  // Dónde SÍ aparezco / cobertura
+  if (/aparezco|salgo|cobertura|b[uú]squeda|cu[aá]nt|presencia|d[oó]nde/.test(t)) {
     return (
       <>
         Hoy te recomiendan en <b>{got.length} de {probes.length}</b> búsquedas
         {got.length ? <>, por ejemplo: {ex(got)}.</> : "."}
+        {missed.length ? <> Te quedan {missed.length} por conquistar.</> : null}
       </>
     );
   }
-  if (/texto|genera|optimiz|kit|descripci|faq/.test(t)) {
+
+  // Generar texto / kit
+  if (/texto|genera|optimiz|kit|descripci|faq|contenido/.test(t)) {
     return (
       <>
-        Te lo preparo: pulsa <b>&quot;Generar texto optimizado para IA&quot;</b> en
-        &quot;Tu kit&quot;. Uso justo las búsquedas donde aún no apareces.
+        Te lo preparo: pulsa <b>&quot;Generar texto optimizado para IA&quot;</b> en &quot;Tu kit&quot; (panel izquierdo).
+        Te doy descripción, FAQ y acciones, enfocadas en las búsquedas donde aún no apareces.
       </>
     );
   }
+
+  // Competencia
+  if (/competencia|competidor|rival|l[ií]der|comparar/.test(t)) {
+    return (
+      <>
+        El análisis de competidores está en camino. Por ahora me centro en TU cobertura real: apareces en{" "}
+        <b>{got.length} de {probes.length}</b> búsquedas. Subir eso es lo que te adelanta al resto.
+      </>
+    );
+  }
+
+  // Zonas / local
+  if (/zona|barrio|cerca|\blocal\b|ciudad/.test(t)) {
+    return (
+      <>
+        {audit.business.city ? (
+          <>
+            Te estoy midiendo en <b>{audit.business.city}</b>.{" "}
+          </>
+        ) : null}
+        El desglose por barrios (Local Intelligence) llegará pronto; de momento mido tu visibilidad general
+        en las búsquedas con IA.
+      </>
+    );
+  }
+
+  // Fallback honesto
   return (
     <>
-      Por ahora puedo enseñarte <b>en qué búsquedas apareces</b> y <b>generarte el
-      texto optimizado</b> (sección &quot;Tu kit&quot;). El chat completo con IA lo
-      activamos al conectar más motores.
+      Puedo enseñarte <b>en qué búsquedas apareces y en cuáles no</b>, tu <b>puntuación por motor</b> y{" "}
+      <b>generarte el texto optimizado</b> (sección &quot;Tu kit&quot;). El chat conversacional completo lo activamos
+      al conectar los motores. ¿Por dónde empezamos?
     </>
   );
 }
@@ -1153,7 +1275,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
   const enginesLabel = audit ? listEngines(Object.keys(audit.byEngine)) : "Perplexity";
   const realProbes = audit ? uniqueProbes(audit.probes ?? []) : [];
   const suggestions = audit
-    ? ["¿En qué búsquedas no aparezco?", "Genérame el texto optimizado", "¿Dónde sí aparezco?"]
+    ? ["¿En qué búsquedas no aparezco?", "¿Cómo voy por motor?", "Genérame el texto optimizado"]
     : SUGGESTIONS;
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -1192,7 +1314,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
     setInput("");
     setThinking(true);
     window.setTimeout(() => {
-      const answer = audit ? answerReal(t, realProbes) : pickAnswer(t);
+      const answer = audit ? answerReal(t, audit) : pickAnswer(t);
       setMessages((m) => [...m, { role: "bot", text: answer }]);
       setThinking(false);
     }, 900);
