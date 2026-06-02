@@ -128,23 +128,23 @@ const SUGGESTIONS = [
 ];
 
 const ANS: Record<string, ReactNode> = {
-  comp: "El movimiento #1: voy a publicar tus horarios y cómo reservar en un formato que ChatGPT, Perplexity y Gemini leen. Osteria Vista ya lo tiene, por eso la recomiendan antes. ¿Lo activo?",
+  comp: "Prioridad #1: publicar tus horarios y método de reserva en el formato estructurado que leen ChatGPT, Perplexity y Gemini. Osteria Vista ya lo tiene, y por eso aparece antes que tú. Puedo prepararlo.",
   urgente:
-    'Lo más importante: que la IA sepa tus horarios y cómo reservar. Lo preparo para que ChatGPT y Gemini lo entiendan. Dime "hazlo" y lo dejo puesto.',
+    "Lo de mayor impacto ahora: que los motores conozcan tus horarios y cómo reservar. Lo preparo en el formato que ChatGPT y Gemini interpretan correctamente.",
   falta:
-    "A la IA le faltan dos cosas sobre ti (las ves a la izquierda): tus horarios y cómo reservar. Con eso, ChatGPT y Perplexity podrán recomendarte cuando alguien quiere reservar mesa.",
+    "A los motores les faltan dos datos sobre tu negocio (los ves a la izquierda): horarios y método de reserva. Completarlos te hace elegible cuando alguien busca reservar.",
   hazlo: (
     <>
-      Hecho. Acabo de preparar tus horarios y reservas en el formato que leen los motores de IA. <b>Ahora ChatGPT, Perplexity y Gemini lo saben</b> y pueden recomendarte. Lo verás reflejado en tu impacto. ✓
+      Hecho. Tus horarios y reservas quedan publicados en el formato que leen los motores de IA. <b>ChatGPT, Perplexity y Gemini ya disponen de esos datos</b> y pueden recomendarte. El impacto se reflejará en tu panel.
     </>
   ),
   aparezco:
-    "Hoy ChatGPT te menciona en 2 de las 5 búsquedas más comunes; Perplexity en 3. En las demás todavía no sales — ahí está tu oportunidad.",
+    "Cobertura actual: ChatGPT te menciona en 2 de las 5 búsquedas más frecuentes; Perplexity en 3. El resto son oportunidades sin cubrir.",
   romantica:
-    'Para que la IA te sugiera en "cena romántica" necesita saber tu ambiente y horarios de noche. Lo escribo en el formato que ChatGPT y Gemini leen. ¿Lo activo?',
+    'Para aparecer en "cena romántica", los motores necesitan conocer tu ambiente y tu horario de noche. Puedo redactarlo en el formato que ChatGPT y Gemini interpretan.',
   osteria:
-    "Osteria Vista tiene 3 cosas que la IA sabe de ella y no de ti: horarios, reservas y su ambiente. Por eso ChatGPT la recomienda 6 de 10. Le enseño eso mismo a la IA sobre ti y la alcanzas. ¿Empiezo?",
-  def: "Mi trabajo es que los motores de IA (ChatGPT, Perplexity, Gemini…) entiendan bien tu negocio y te recomienden. Yo me encargo de lo técnico.",
+    "Osteria Vista aporta a los motores 3 datos que tú aún no: horarios, reservas y descripción de ambiente. Por eso la recomiendan 6 de 10. Replicar esa información te permite alcanzarla.",
+  def: "Mi función es que los motores de IA (ChatGPT, Perplexity, Gemini…) interpreten bien tu negocio y te recomienden. De la parte técnica me encargo yo.",
 };
 
 function pickAnswer(q: string): ReactNode {
