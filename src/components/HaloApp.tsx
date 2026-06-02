@@ -729,6 +729,18 @@ export default function HaloApp() {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // Enlace compartible: si la URL trae ?b=<negocio>, reanaliza ese negocio al
+  // abrir (el destinatario ve el informe directamente).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const b = new URLSearchParams(window.location.search).get("b");
+    if (b && b.trim()) {
+      setBizInput(b);
+      runRealAnalysis(b);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Guarda una auditoría en el historial local y devuelve la lista nueva.
   function rememberAudit(a: AuditData) {
     // Cada análisis real añade un punto a la evolución del negocio.
@@ -1842,6 +1854,42 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
   );
 }
 
+// Botón "Compartir": copia (o usa Web Share en móvil) un enlace que reanaliza
+// el negocio al abrirlo — loop viral de demo, sin base de datos.
+function ShareButton({ input }: { input: string }) {
+  const t = useT();
+  const [done, setDone] = useState(false);
+  if (!input) return null;
+  async function share() {
+    const url = `${window.location.origin}/?b=${encodeURIComponent(input)}`;
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: "Halo", url });
+        return;
+      }
+    } catch {
+      /* cancelado o sin soporte → caemos al portapapeles */
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setDone(true);
+      setTimeout(() => setDone(false), 1600);
+    } catch {
+      /* portapapeles no disponible */
+    }
+  }
+  return (
+    <button className="histbtn" type="button" onClick={share}>
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+        <path d="M16 6l-4-4-4 4" />
+        <path d="M12 2v14" />
+      </svg>
+      {done ? t("share.copied") : t("share.btn")}
+    </button>
+  );
+}
+
 function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: () => void }) {
   const t = useT();
   const { lang } = useLang();
@@ -1912,10 +1960,13 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
             <span className="pulse" />
             {t("report.whatAI", { name: bizName })}
           </div>
-          <button className="histbtn" type="button" onClick={onHistory}>
-            <Ic ic="clock" size={12} />
-            {t("report.viewHistory")}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            {audit && <ShareButton input={audit.business.website || audit.business.name} />}
+            <button className="histbtn" type="button" onClick={onHistory}>
+              <Ic ic="clock" size={12} />
+              {t("report.viewHistory")}
+            </button>
+          </div>
         </div>
         <div className="lbody">
           <div className="metric">
@@ -2319,6 +2370,9 @@ function DashReal({ audit }: { audit: AuditData }) {
             {city} · {t("dash.live")}
           </div>
           <h1 className="dhead-title">{t("dash.title")}</h1>
+        </div>
+        <div className="dhead-actions">
+          <ShareButton input={audit.business.website || audit.business.name} />
         </div>
       </div>
 

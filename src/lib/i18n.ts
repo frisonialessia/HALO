@@ -124,6 +124,8 @@ const D: Record<string, Entry> = {
   "fab.ask": { en: "Ask Halo", es: "Pregúntale a Halo" },
   "copy.do": { en: "Copy", es: "Copiar" },
   "copy.done": { en: "Copied ✓", es: "Copiado ✓" },
+  "share.btn": { en: "Share", es: "Compartir" },
+  "share.copied": { en: "Link copied ✓", es: "Enlace copiado ✓" },
 
   // ---- Chat (assistant) ----
   "chat.assistant": { en: "Visibility assistant", es: "Asistente de visibilidad" },
