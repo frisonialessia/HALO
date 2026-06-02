@@ -81,6 +81,105 @@ const D: Record<string, Entry> = {
   "load.s3": { en: "Measuring how often you're chosen", es: "Midiendo cuánto te eligen" },
   "load.s4": { en: "Preparing your recommendations", es: "Preparando tus recomendaciones" },
   "load.analyzing": { en: "Analyzing", es: "Analizando" },
+
+  // ---- App shell ----
+  "app.backHome": { en: "Back to home", es: "Salir al inicio" },
+  "app.yourBiz": { en: "Your business", es: "Tu negocio" },
+  "app.settings": { en: "Settings & connections", es: "Ajustes y conexiones" },
+  "app.switchBiz": { en: "Switch business", es: "Cambiar de negocio" },
+  "app.logout": { en: "Log out", es: "Cerrar sesión" },
+  "app.demoA": { en: "You're viewing an", es: "Estás viendo un" },
+  "app.demoB": { en: "example", es: "ejemplo" },
+  "app.demoC": {
+    en: ". Analyze your business to see your real data.",
+    es: ". Analiza tu negocio para ver tus datos reales.",
+  },
+  "app.demoCta": { en: "Analyze my business →", es: "Analizar mi negocio →" },
+
+  // ---- Unlock bar ----
+  "unlock.invalidEmail": { en: "Enter a valid email.", es: "Pon un email válido." },
+  "unlock.a": { en: "This is an", es: "Esto es una" },
+  "unlock.est": { en: "estimate", es: "estimación" },
+  "unlock.for": { en: "for", es: "para" },
+  "unlock.c": {
+    en: ". Unlock your real analysis, free.",
+    es: ". Desbloquea tu análisis real, gratis.",
+  },
+  "unlock.cta": { en: "See my real analysis →", es: "Ver mi análisis real →" },
+  "unlock.emailPrompt": {
+    en: "We'll email you your real report:",
+    es: "Te enviamos tu informe real al correo:",
+  },
+  "unlock.emailPh": { en: "you@email.com", es: "tu@email.com" },
+  "unlock.submit": { en: "Unlock →", es: "Desbloquear →" },
+
+  // ---- Misc chrome ----
+  "fab.ask": { en: "Ask Halo", es: "Pregúntale a Halo" },
+  "copy.do": { en: "Copy", es: "Copiar" },
+  "copy.done": { en: "Copied ✓", es: "Copiado ✓" },
+
+  // ---- Chat (assistant) ----
+  "chat.assistant": { en: "Visibility assistant", es: "Asistente de visibilidad" },
+  "chat.thinking": { en: "Halo is thinking…", es: "Halo lo está pensando…" },
+  "chat.placeholder": { en: "Ask Halo…", es: "Pregúntale a Halo…" },
+  "chat.send": { en: "Send", es: "Enviar" },
+  "chat.aiAnswer": { en: "See the AI's answer", es: "Ver respuesta de la IA" },
+  "chat.bootThink": { en: "Analyzing your business…", es: "Analizando tu negocio…" },
+  "chat.bootA": { en: "I analyzed the presence of", es: "Analicé la presencia de" },
+  "chat.bootTail": {
+    en: "I have concrete actions to get you chosen more. If you have questions about AEO or how this works, ask me first; otherwise, we start with the highest-impact one.",
+    es: "Tengo acciones concretas para que te elijan más. Si tienes dudas sobre AEO o cómo funciona esto, pregúntame primero; si no, empezamos por la de mayor impacto.",
+  },
+  "chat.sug.appear": {
+    en: "Which searches do I appear in today?",
+    es: "¿En qué búsquedas aparezco hoy?",
+  },
+  "chat.sug.romantic": {
+    en: "Make me appear in 'romantic dinner'",
+    es: "Hazme aparecer en 'cena romántica'",
+  },
+  "chat.sug.osteria": {
+    en: "What does Osteria Vista do that I don't?",
+    es: "¿Qué hace Osteria Vista que yo no?",
+  },
+  "chat.sug.missing": {
+    en: "Which searches am I missing from?",
+    es: "¿En qué búsquedas no aparezco?",
+  },
+  "chat.sug.byEngine": { en: "How am I doing by engine?", es: "¿Cómo voy por motor?" },
+  "chat.sug.genCopy": { en: "Generate my optimized copy", es: "Genérame el texto optimizado" },
+
+  // ---- Report (HALO view) ----
+  "report.whatAI": {
+    en: "What AI understands about {name}",
+    es: "Lo que la IA entiende de {name}",
+  },
+  "report.viewHistory": { en: "View history", es: "Ver historial" },
+  "report.ofTen": { en: "{n} of 10", es: "{n} de 10" },
+  "report.ofN": { en: "{a} of {b}", es: "{a} de {b}" },
+  "report.trendWeek": { en: "+1 this week", es: "+1 esta semana" },
+  "report.metricLbl": {
+    en: "How often you're chosen when people search for a business like yours",
+    es: "Cuánto te eligen cuando buscan un negocio como el tuyo",
+  },
+  "report.kwTitle": { en: "Keywords to work on", es: "Keywords a trabajar" },
+  "report.kwIntroA": { en: "You're recommended in", es: "Te recomiendan en" },
+  "report.kwIntroC": {
+    en: "customer searches. Prioritize the ones you don't cover yet: they're your biggest opportunity.",
+    es: "búsquedas de clientes. Prioriza las que aún no cubres: son tu mayor oportunidad.",
+  },
+  "report.noPresence": { en: "Not present", es: "Sin presencia" },
+  "report.hasPresence": { en: "Present", es: "Con presencia" },
+  "report.missHint": {
+    en: "You're not recommended here yet. Optimize your content for this search.",
+    es: "Aún no te recomiendan aquí. Optimiza tu contenido para esta búsqueda.",
+  },
+  "report.rank": { en: "You appear · rank #{n}", es: "Apareces · puesto #{n}" },
+  "report.appearHere": { en: "You appear in this search", es: "Apareces en esta búsqueda" },
+  "report.demoKnow": {
+    en: "What ChatGPT, Perplexity and Gemini know about you",
+    es: "Lo que ChatGPT, Perplexity y Gemini saben de ti",
+  },
 };
 
 export function translate(

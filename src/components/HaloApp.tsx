@@ -6,7 +6,7 @@ import { isValidEmail, rememberLeadEmail, savedLeadEmail, submitLead } from "@/l
 import { mockAudit } from "@/lib/mock";
 import { loadPrefs, savePrefs } from "@/lib/prefs";
 import { addTrendPoint, getTrend, type TrendPoint } from "@/lib/trend";
-import { translate, LangContext, type Lang, type TFn } from "@/lib/i18n";
+import { translate, useT, useLang, LangContext, type Lang, type TFn } from "@/lib/i18n";
 
 // ============== Orbe (logo) ==============
 function Orb({ className = "", thinking = false }: { className?: string; thinking?: boolean }) {
@@ -124,42 +124,46 @@ const KNOW_ITEMS: { ok: boolean; t: string; d: string; op?: boolean }[] = [
   { ok: true, t: "Opiniones de clientes", d: "Buenas reseñas recientes. Las usan a tu favor." },
 ];
 
-const SUGGESTIONS = [
-  "¿En qué búsquedas aparezco hoy?",
-  "Hazme aparecer en 'cena romántica'",
-  "¿Qué hace Osteria Vista que yo no?",
-];
-
-const ANS: Record<string, ReactNode> = {
-  comp: "Prioridad #1: publicar tus horarios y método de reserva en el formato estructurado que leen ChatGPT, Perplexity y Gemini. Osteria Vista ya lo tiene, y por eso aparece antes que tú. Puedo prepararlo.",
-  urgente:
-    "Lo de mayor impacto ahora: que los motores conozcan tus horarios y cómo reservar. Lo preparo en el formato que ChatGPT y Gemini interpretan correctamente.",
-  falta:
-    "A los motores les faltan dos datos sobre tu negocio (los ves a la izquierda): horarios y método de reserva. Completarlos te hace elegible cuando alguien busca reservar.",
-  hazlo: (
-    <>
-      Hecho. Tus horarios y reservas quedan publicados en el formato que leen los motores de IA. <b>ChatGPT, Perplexity y Gemini ya disponen de esos datos</b> y pueden recomendarte. El impacto se reflejará en tu panel.
-    </>
-  ),
-  aparezco:
-    "Cobertura actual: ChatGPT te menciona en 2 de las 5 búsquedas más frecuentes; Perplexity en 3. El resto son oportunidades sin cubrir.",
-  romantica:
-    'Para aparecer en "cena romántica", los motores necesitan conocer tu ambiente y tu horario de noche. Puedo redactarlo en el formato que ChatGPT y Gemini interpretan.',
-  osteria:
-    "Osteria Vista aporta a los motores 3 datos que tú aún no: horarios, reservas y descripción de ambiente. Por eso la recomiendan 6 de 10. Replicar esa información te permite alcanzarla.",
-  def: "Mi función es que los motores de IA (ChatGPT, Perplexity, Gemini…) interpreten bien tu negocio y te recomienden. De la parte técnica me encargo yo.",
-};
-
-function pickAnswer(q: string): ReactNode {
-  const t = q.toLowerCase();
-  if (/aparezco|búsquedas/.test(t)) return ANS.aparezco;
-  if (/romántica|romantica/.test(t)) return ANS.romantica;
-  if (/osteria|hace.*que yo/.test(t)) return ANS.osteria;
-  if (/compet|super/.test(t)) return ANS.comp;
-  if (/urgent|importante|arregla/.test(t)) return ANS.urgente;
-  if (/falta|saber de m/.test(t)) return ANS.falta;
-  if (/hazlo|dale|sí|si\b|ok/.test(t)) return ANS.hazlo;
-  return ANS.def;
+function pickAnswer(q: string, lang: Lang): ReactNode {
+  const s = q.toLowerCase();
+  const es = lang === "es";
+  if (/aparezco|b[uú]squeda|appear|search/.test(s))
+    return es
+      ? "Cobertura actual: ChatGPT te menciona en 2 de las 5 búsquedas más frecuentes; Perplexity en 3. El resto son oportunidades sin cubrir."
+      : "Current coverage: ChatGPT mentions you in 2 of the 5 most frequent searches; Perplexity in 3. The rest are uncovered opportunities.";
+  if (/rom[aá]ntica|romantic|dinner|cena/.test(s))
+    return es
+      ? 'Para aparecer en "cena romántica", los motores necesitan conocer tu ambiente y tu horario de noche. Puedo redactarlo en el formato que ChatGPT y Gemini interpretan.'
+      : 'To appear for "romantic dinner", the engines need to know your atmosphere and your evening hours. I can write it in the format ChatGPT and Gemini interpret.';
+  if (/osteria|hace.*que yo|does.*that i|what.*do/.test(s))
+    return es
+      ? "Osteria Vista aporta a los motores 3 datos que tú aún no: horarios, reservas y descripción de ambiente. Por eso la recomiendan 6 de 10. Replicar esa información te permite alcanzarla."
+      : "Osteria Vista gives the engines 3 details you don't have yet: hours, reservations and an atmosphere description. That's why it's recommended 6 of 10. Replicating that info lets you catch up.";
+  if (/compet|super|rival/.test(s))
+    return es
+      ? "Prioridad #1: publicar tus horarios y método de reserva en el formato estructurado que leen ChatGPT, Perplexity y Gemini. Osteria Vista ya lo tiene, y por eso aparece antes que tú. Puedo prepararlo."
+      : "Priority #1: publish your hours and booking method in the structured format ChatGPT, Perplexity and Gemini read. Osteria Vista already has it, which is why it ranks ahead of you. I can prepare it.";
+  if (/urgent|importante|arregla|fix/.test(s))
+    return es
+      ? "Lo de mayor impacto ahora: que los motores conozcan tus horarios y cómo reservar. Lo preparo en el formato que ChatGPT y Gemini interpretan correctamente."
+      : "The highest impact right now: getting the engines to know your hours and how to book. I'll prepare it in the format ChatGPT and Gemini interpret correctly.";
+  if (/falta|saber de m|missing|know about/.test(s))
+    return es
+      ? "A los motores les faltan dos datos sobre tu negocio (los ves a la izquierda): horarios y método de reserva. Completarlos te hace elegible cuando alguien busca reservar."
+      : "The engines are missing two details about your business (shown on the left): hours and booking method. Completing them makes you eligible when someone wants to book.";
+  if (/hazlo|dale|s[ií]\b|\bok\b|do it|\byes\b/.test(s))
+    return es ? (
+      <>
+        Hecho. Tus horarios y reservas quedan publicados en el formato que leen los motores de IA. <b>ChatGPT, Perplexity y Gemini ya disponen de esos datos</b> y pueden recomendarte. El impacto se reflejará en tu panel.
+      </>
+    ) : (
+      <>
+        Done. Your hours and reservations are now published in the format AI engines read. <b>ChatGPT, Perplexity and Gemini now have that data</b> and can recommend you. The impact will show in your dashboard.
+      </>
+    );
+  return es
+    ? "Mi función es que los motores de IA (ChatGPT, Perplexity, Gemini…) interpreten bien tu negocio y te recomienden. De la parte técnica me encargo yo."
+    : "My job is to get the AI engines (ChatGPT, Perplexity, Gemini…) to understand your business well and recommend you. I handle the technical part.";
 }
 
 // Agrupa los probes por búsqueda única (con varios motores, una misma query
@@ -182,10 +186,11 @@ function uniqueProbes(probes: ProbeLite[]): ProbeLite[] {
 
 // Desplegable "Ver lo que dijo la IA": el fragmento real de la respuesta del motor.
 function AiAnswer({ text }: { text: string }) {
+  const t = useT();
   return (
     <details style={{ marginTop: 8, paddingLeft: 30 }}>
       <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: "var(--text-2)" }}>
-        Ver respuesta de la IA
+        {t("chat.aiAnswer")}
       </summary>
       <div
         style={{
@@ -208,8 +213,9 @@ function AiAnswer({ text }: { text: string }) {
 // Respuestas del chat con DATOS REALES (sin API), a partir del análisis:
 // cobertura, por motor, posición, qué es AEO, plan… Honesto sobre lo que aún
 // no hace (competencia/zonas/chat conversacional → en camino).
-function answerReal(q: string, audit: AuditData): ReactNode {
-  const t = q.toLowerCase();
+function answerReal(q: string, audit: AuditData, lang: Lang): ReactNode {
+  const s = q.toLowerCase();
+  const es = lang === "es";
   const probes = uniqueProbes(audit.probes ?? []);
   const got = probes.filter((p) => p.appeared);
   const missed = probes.filter((p) => !p.appeared);
@@ -219,30 +225,93 @@ function answerReal(q: string, audit: AuditData): ReactNode {
   const ex = (arr: typeof probes) =>
     arr.slice(0, 3).map((m) => `"${m.query}"`).join(", ");
 
-  // Saludo
-  if (/^\s*(hola|buenas|hey|hi|holi)\b/.test(t)) {
-    return (
+  // Saludo / greeting
+  if (/^\s*(hola|buenas|hey|hi|holi|hello)\b/.test(s)) {
+    return es ? (
       <>
         ¡Hola! Soy Halo. Hoy <b>{name}</b> aparece en <b>{got.length} de {probes.length}</b> búsquedas con
         IA. Pregúntame en cuáles no apareces, cómo vas por motor, o pídeme que te genere el texto optimizado.
       </>
+    ) : (
+      <>
+        Hi! I&apos;m Halo. Today <b>{name}</b> appears in <b>{got.length} of {probes.length}</b> AI searches.
+        Ask me which ones you&apos;re missing from, how you&apos;re doing by engine, or to generate your
+        optimized copy.
+      </>
     );
   }
 
-  // Qué es / qué haces / cómo funciona / AEO
-  if (/qu[eé] es|qu[eé] haces|c[oó]mo funciona|\baeo\b|\bgeo\b|para qu[eé]|qu[eé] mides/.test(t)) {
-    return (
+  // Qué es / what is / AEO
+  if (
+    /qu[eé] es|qu[eé] haces|c[oó]mo funciona|\baeo\b|\bgeo\b|para qu[eé]|qu[eé] mides|what is|what do you|how does|what.*measure/.test(
+      s
+    )
+  ) {
+    return es ? (
       <>
         Mido cuántas veces te recomiendan los buscadores con IA (ChatGPT, Perplexity, Gemini) cuando alguien
         busca un negocio como el tuyo. Hoy te eligen <b>{score} de cada 10</b>. Mi trabajo es subir ese
         número: te digo dónde no apareces y te genero el texto que la IA necesita para recomendarte.
       </>
+    ) : (
+      <>
+        I measure how often AI search engines (ChatGPT, Perplexity, Gemini) recommend you when someone looks
+        for a business like yours. Today you&apos;re chosen <b>{score} out of 10</b>. My job is to raise that
+        number: I tell you where you don&apos;t appear and generate the copy the AI needs to recommend you.
+      </>
     );
   }
 
-  // Puntuación / cómo voy
-  if (/puntuaci|c[oó]mo voy|c[oó]mo estoy|qu[eé] tal|mi nota|mi score/.test(t)) {
+  // Por motor / by engine
+  if (/motor|chatgpt|perplexity|gemini|en cu[aá]l|d[oó]nde.*mejor|engine|which.*best/.test(s)) {
+    if (engines.length === 0)
+      return es
+        ? "Aún no tengo el desglose por motor de este análisis."
+        : "I don't have the per-engine breakdown for this analysis yet.";
+    const sorted = [...engines].sort((a, b) => b[1] - a[1]);
+    const best = sorted[0];
+    const worst = sorted[sorted.length - 1];
     return (
+      <>
+        {es ? "Por motor: " : "By engine: "}
+        {sorted.map(([e, v], i) => (
+          <span key={e}>
+            {i ? ", " : ""}
+            <b>{ENGINE_LABELS[e] ?? e}</b> {Math.round(v * 10)}/10
+          </span>
+        ))}
+        {es ? (
+          <>
+            . Donde mejor estás es <b>{ENGINE_LABELS[best[0]] ?? best[0]}</b>
+          </>
+        ) : (
+          <>
+            . You&apos;re strongest on <b>{ENGINE_LABELS[best[0]] ?? best[0]}</b>
+          </>
+        )}
+        {best[0] !== worst[0] ? (
+          es ? (
+            <>
+              {" "}
+              y donde más margen tienes es <b>{ENGINE_LABELS[worst[0]] ?? worst[0]}</b>
+            </>
+          ) : (
+            <>
+              {" "}
+              and have the most room on <b>{ENGINE_LABELS[worst[0]] ?? worst[0]}</b>
+            </>
+          )
+        ) : null}
+        .
+      </>
+    );
+  }
+
+  // Puntuación / score
+  if (
+    /puntuaci|c[oó]mo voy|c[oó]mo estoy|qu[eé] tal|mi nota|mi score|how.*doing|my score|how am i/.test(s)
+  ) {
+    return es ? (
       <>
         Hoy te recomiendan <b>{score} de cada 10</b> veces ({got.length} de {probes.length} búsquedas).{" "}
         {score <= 3
@@ -251,108 +320,132 @@ function answerReal(q: string, audit: AuditData): ReactNode {
           ? "Posición intermedia, con recorrido por delante."
           : "Posición sólida; el objetivo es consolidarla."}
       </>
-    );
-  }
-
-  // Por motor
-  if (/motor|chatgpt|perplexity|gemini|en cu[aá]l|d[oó]nde.*mejor/.test(t)) {
-    if (engines.length === 0) return "Aún no tengo el desglose por motor de este análisis.";
-    const sorted = [...engines].sort((a, b) => b[1] - a[1]);
-    const best = sorted[0];
-    const worst = sorted[sorted.length - 1];
-    return (
+    ) : (
       <>
-        Por motor:{" "}
-        {sorted.map(([e, v], i) => (
-          <span key={e}>
-            {i ? ", " : ""}
-            <b>{ENGINE_LABELS[e] ?? e}</b> {Math.round(v * 10)}/10
-          </span>
-        ))}
-        . Donde mejor estás es <b>{ENGINE_LABELS[best[0]] ?? best[0]}</b>
-        {best[0] !== worst[0] ? (
-          <>
-            {" "}
-            y donde más margen tienes es <b>{ENGINE_LABELS[worst[0]] ?? worst[0]}</b>
-          </>
-        ) : null}
-        .
+        Today you&apos;re recommended <b>{score} out of 10</b> times ({got.length} of {probes.length}{" "}
+        searches).{" "}
+        {score <= 3
+          ? "There's plenty of room to improve with a clear plan."
+          : score <= 6
+          ? "A mid position, with room ahead."
+          : "A solid position; the goal is to consolidate it."}
       </>
     );
   }
 
   // Posición / ranking
-  if (/posici[oó]n|puesto|ranking|\btop\b|n[uú]mero/.test(t)) {
+  if (/posici[oó]n|puesto|ranking|\btop\b|n[uú]mero|\brank|position/.test(s)) {
     const positions = got.map((p) => p.position).filter((x): x is number => !!x);
     if (positions.length === 0)
-      return (
+      return es ? (
         <>
           Todavía no apareces en un puesto destacado en las búsquedas analizadas. Al cubrir las que
           faltan, empezarás a posicionarte.
         </>
+      ) : (
+        <>
+          You don&apos;t appear in a top spot yet in the searches analyzed. As you cover the missing ones,
+          you&apos;ll start to rank.
+        </>
       );
     const best = Math.min(...positions);
     const top3 = got.filter((p) => (p.position ?? 99) <= 3).length;
-    return (
+    return es ? (
       <>
         Tu mejor posición es <b>#{best}</b>, y estás en el top 3 en <b>{top3}</b> de las búsquedas donde
         apareces. Cuanto más arriba, más te eligen.
       </>
+    ) : (
+      <>
+        Your best position is <b>#{best}</b>, and you&apos;re in the top 3 in <b>{top3}</b> of the searches
+        where you appear. The higher you are, the more you&apos;re chosen.
+      </>
     );
   }
 
-  // Dónde NO aparezco / mejorar / plan
-  if (/no aparezco|no aparece|no salgo|mejorar|qu[eé] hago|primero|prioridad|plan|acci[oó]n|falta/.test(t)) {
+  // Dónde NO aparezco / plan
+  if (
+    /no aparezco|no aparece|no salgo|mejorar|qu[eé] hago|primero|prioridad|plan|acci[oó]n|falta|missing|improve|priorit|what should i|what do i/.test(
+      s
+    )
+  ) {
     if (missed.length === 0)
-      return (
+      return es ? (
         <>
           Apareces en todas las búsquedas analizadas. El siguiente paso es reforzar tu posición; puedo
           generarte el texto optimizado para consolidarla.
         </>
+      ) : (
+        <>
+          You appear in every search analyzed. The next step is to reinforce your position; I can generate
+          optimized copy to consolidate it.
+        </>
       );
-    return (
+    return es ? (
       <>
         No apareces en <b>{missed.length} de {probes.length}</b> búsquedas, por ejemplo: {ex(missed)}.
         Para cubrirlas, genera tu texto en <b>&quot;Tu kit&quot;</b>: se basa precisamente en esas
         búsquedas.
       </>
+    ) : (
+      <>
+        You don&apos;t appear in <b>{missed.length} of {probes.length}</b> searches, for example: {ex(missed)}.
+        To cover them, generate your copy in <b>&quot;Your kit&quot;</b>: it&apos;s built precisely from those
+        searches.
+      </>
     );
   }
 
-  // Dónde SÍ aparezco / cobertura
-  if (/aparezco|salgo|cobertura|b[uú]squeda|cu[aá]nt|presencia|d[oó]nde/.test(t)) {
-    return (
+  // Dónde SÍ aparezco / coverage
+  if (/aparezco|salgo|cobertura|b[uú]squeda|cu[aá]nt|presencia|d[oó]nde|appear|coverage|where|how many/.test(s)) {
+    return es ? (
       <>
         Hoy te recomiendan en <b>{got.length} de {probes.length}</b> búsquedas
         {got.length ? <>, por ejemplo: {ex(got)}.</> : "."}
         {missed.length ? <> Faltan {missed.length} por cubrir.</> : null}
       </>
-    );
-  }
-
-  // Generar texto / kit
-  if (/texto|genera|optimiz|kit|descripci|faq|contenido/.test(t)) {
-    return (
+    ) : (
       <>
-        Te lo preparo: pulsa <b>&quot;Generar texto optimizado para IA&quot;</b> en &quot;Tu kit&quot; (panel izquierdo).
-        Te doy descripción, FAQ y acciones, enfocadas en las búsquedas donde aún no apareces.
+        Today you&apos;re recommended in <b>{got.length} of {probes.length}</b> searches
+        {got.length ? <>, for example: {ex(got)}.</> : "."}
+        {missed.length ? <> {missed.length} left to cover.</> : null}
       </>
     );
   }
 
-  // Competencia
-  if (/competencia|competidor|rival|l[ií]der|comparar/.test(t)) {
-    return (
+  // Generar texto / kit
+  if (/texto|genera|optimiz|kit|descripci|faq|contenido|copy|generate|content/.test(s)) {
+    return es ? (
+      <>
+        Te lo preparo: pulsa <b>&quot;Generar texto optimizado para IA&quot;</b> en &quot;Tu kit&quot; (panel izquierdo).
+        Te doy descripción, FAQ y acciones, enfocadas en las búsquedas donde aún no apareces.
+      </>
+    ) : (
+      <>
+        I&apos;ll prepare it: click <b>&quot;Generate AI-optimized copy&quot;</b> in &quot;Your kit&quot; (left panel).
+        I&apos;ll give you a description, FAQ and actions, focused on the searches where you don&apos;t appear yet.
+      </>
+    );
+  }
+
+  // Competencia / competition
+  if (/competencia|competidor|rival|l[ií]der|comparar|competit|compare/.test(s)) {
+    return es ? (
       <>
         El análisis de competidores está en camino. Por ahora me centro en TU cobertura real: apareces en{" "}
         <b>{got.length} de {probes.length}</b> búsquedas. Subir eso es lo que te adelanta al resto.
+      </>
+    ) : (
+      <>
+        Competitor analysis is on the way. For now I focus on YOUR real coverage: you appear in{" "}
+        <b>{got.length} of {probes.length}</b> searches. Raising that is what puts you ahead.
       </>
     );
   }
 
   // Zonas / local
-  if (/zona|barrio|cerca|\blocal\b|ciudad/.test(t)) {
-    return (
+  if (/zona|barrio|cerca|\blocal\b|ciudad|area|neighbo|\bcity\b|near/.test(s)) {
+    return es ? (
       <>
         {audit.business.city ? (
           <>
@@ -362,15 +455,31 @@ function answerReal(q: string, audit: AuditData): ReactNode {
         El desglose por barrios (Local Intelligence) llegará pronto; de momento mido tu visibilidad general
         en las búsquedas con IA.
       </>
+    ) : (
+      <>
+        {audit.business.city ? (
+          <>
+            I&apos;m measuring you in <b>{audit.business.city}</b>.{" "}
+          </>
+        ) : null}
+        The neighborhood breakdown (Local Intelligence) is coming soon; for now I measure your overall
+        visibility across AI searches.
+      </>
     );
   }
 
-  // Fallback honesto
-  return (
+  // Fallback honesto / honest fallback
+  return es ? (
     <>
       Puedo enseñarte <b>en qué búsquedas apareces y en cuáles no</b>, tu <b>puntuación por motor</b> y{" "}
       <b>generarte el texto optimizado</b> (sección &quot;Tu kit&quot;). El chat conversacional completo lo activamos
       al conectar los motores. ¿Por dónde empezamos?
+    </>
+  ) : (
+    <>
+      I can show you <b>which searches you appear in and which you don&apos;t</b>, your <b>score by engine</b>,
+      and <b>generate your optimized copy</b> (&quot;Your kit&quot; section). Full conversational chat unlocks when
+      we connect the engines. Where shall we start?
     </>
   );
 }
@@ -862,6 +971,7 @@ function UnlockBar({
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [err, setErr] = useState("");
+  const t = useT();
 
   function go() {
     const saved = savedLeadEmail();
@@ -874,7 +984,7 @@ function UnlockBar({
   }
   function submit() {
     if (!isValidEmail(email)) {
-      setErr("Pon un email válido.");
+      setErr(t("unlock.invalidEmail"));
       return;
     }
     onUnlock(email.trim());
@@ -910,18 +1020,19 @@ function UnlockBar({
       {!open ? (
         <>
           <span>
-            Esto es una <b>estimación</b> para <b>{name}</b>. Desbloquea tu análisis real, gratis.
+            {t("unlock.a")} <b>{t("unlock.est")}</b> {t("unlock.for")} <b>{name}</b>
+            {t("unlock.c")}
           </span>
           <button type="button" onClick={go} style={btn}>
-            Ver mi análisis real →
+            {t("unlock.cta")}
           </button>
         </>
       ) : (
         <>
-          <span>Te enviamos tu informe real al correo:</span>
+          <span>{t("unlock.emailPrompt")}</span>
           <input
             type="email"
-            placeholder="tu@email.com"
+            placeholder={t("unlock.emailPh")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onKeyDown={(e) => {
@@ -940,7 +1051,7 @@ function UnlockBar({
             }}
           />
           <button type="button" onClick={submit} style={btn}>
-            Desbloquear →
+            {t("unlock.submit")}
           </button>
           {err && <span style={{ color: "var(--deep)", fontWeight: 500 }}>{err}</span>}
         </>
@@ -982,6 +1093,7 @@ function AppShell({
   onRemoveHistory: (id: string) => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -998,7 +1110,7 @@ function AppShell({
     <div className="screen active" id="s-app">
       <header className={scrolled ? "scrolled" : ""}>
         <div className="hbar">
-          <div className="logo haloOrb" onClick={() => setScreen("landing")} title="Salir al inicio">
+          <div className="logo haloOrb" onClick={() => setScreen("landing")} title={t("app.backHome")}>
             <span className="blob b1" />
             <span className="blob b2" />
             <span className="blob b3" />
@@ -1022,7 +1134,7 @@ function AppShell({
                   whiteSpace: "nowrap",
                 }}
               >
-                {audit?.business.name ?? "Tu negocio"}
+                {audit?.business.name ?? t("app.yourBiz")}
               </span>
               <span style={{ color: "var(--muted)" }}>▾</span>
             </button>
@@ -1035,7 +1147,7 @@ function AppShell({
                     setMenuOpen(false);
                   }}
                 >
-                  Ajustes y conexiones
+                  {t("app.settings")}
                 </div>
                 <div
                   className="di"
@@ -1044,7 +1156,7 @@ function AppShell({
                     setMenuOpen(false);
                   }}
                 >
-                  Cambiar de negocio
+                  {t("app.switchBiz")}
                 </div>
                 <div className="sep" />
                 <div
@@ -1054,7 +1166,7 @@ function AppShell({
                     setScreen("landing");
                   }}
                 >
-                  Cerrar sesión
+                  {t("app.logout")}
                 </div>
               </div>
             )}
@@ -1081,7 +1193,8 @@ function AppShell({
           }}
         >
           <span>
-            Estás viendo un <b>ejemplo</b>. Analiza tu negocio para ver tus datos reales.
+            {t("app.demoA")} <b>{t("app.demoB")}</b>
+            {t("app.demoC")}
           </span>
           <button
             type="button"
@@ -1098,7 +1211,7 @@ function AppShell({
               fontFamily: "inherit",
             }}
           >
-            Analizar mi negocio →
+            {t("app.demoCta")}
           </button>
         </div>
       )}
@@ -1132,11 +1245,12 @@ function AppShell({
 
 // ============== FAB (orbe flotante, sin texto) ==============
 function FloatingFab({ hidden, onClick }: { hidden: boolean; onClick: () => void }) {
+  const t = useT();
   return (
     <div
       className={`fab ${hidden ? "hidden" : ""}`}
       onClick={onClick}
-      title="Pregúntale a Halo"
+      title={t("fab.ask")}
       role="button"
     >
       <Orb className="forb" />
@@ -1154,22 +1268,32 @@ const ENGINE_LABELS: Record<string, string> = {
   grok: "Grok",
   deepseek: "DeepSeek",
 };
-function listEngines(keys: string[]): string {
+function listEngines(keys: string[], lang: Lang): string {
   const names = keys.map((k) => ENGINE_LABELS[k] ?? k);
   if (names.length <= 1) return names[0] ?? "Perplexity";
-  return names.slice(0, -1).join(", ") + " y " + names[names.length - 1];
+  const and = lang === "es" ? " y " : " and ";
+  return names.slice(0, -1).join(", ") + and + names[names.length - 1];
 }
 
 // Frase de apertura del informe según la puntuación: honesta y con un tono que
 // motiva incluso en un 0 de 10 (en vez de un seco "0 de cada 10").
-function scoreLine(score: number): string {
+function scoreLine(score: number, lang: Lang): string {
+  if (lang === "es") {
+    if (score <= 0)
+      return "actualmente la IA no te recomienda en ninguna de las búsquedas analizadas; es el punto de partida para mejorar.";
+    if (score <= 3)
+      return `hoy te recomiendan ${score} de cada 10 veces. Existe un amplio margen de mejora con un plan claro.`;
+    if (score <= 6)
+      return `hoy te recomiendan ${score} de cada 10 veces. Posición intermedia, con recorrido por delante.`;
+    return `hoy te recomiendan ${score} de cada 10 veces. Posición sólida; el objetivo es consolidarla y ampliarla.`;
+  }
   if (score <= 0)
-    return "actualmente la IA no te recomienda en ninguna de las búsquedas analizadas; es el punto de partida para mejorar.";
+    return "right now the AI doesn't recommend you in any of the searches analyzed; that's your starting point to improve.";
   if (score <= 3)
-    return `hoy te recomiendan ${score} de cada 10 veces. Existe un amplio margen de mejora con un plan claro.`;
+    return `today you're recommended ${score} out of 10 times. There's plenty of room to improve with a clear plan.`;
   if (score <= 6)
-    return `hoy te recomiendan ${score} de cada 10 veces. Posición intermedia, con recorrido por delante.`;
-  return `hoy te recomiendan ${score} de cada 10 veces. Posición sólida; el objetivo es consolidarla y ampliarla.`;
+    return `today you're recommended ${score} out of 10 times. A mid position, with room ahead.`;
+  return `today you're recommended ${score} out of 10 times. A solid position; the goal is to consolidate and expand it.`;
 }
 
 // Texto de ejemplo para la demo (sin auditoría real): muestra el valor del
@@ -1229,6 +1353,7 @@ const assetHeadStyle: CSSProperties = {
 // Botón "Copiar" con confirmación efímera.
 function CopyButton({ text }: { text: string }) {
   const [done, setDone] = useState(false);
+  const t = useT();
   return (
     <button
       type="button"
@@ -1255,7 +1380,7 @@ function CopyButton({ text }: { text: string }) {
         transition: "all .15s",
       }}
     >
-      {done ? "Copiado ✓" : "Copiar"}
+      {done ? t("copy.done") : t("copy.do")}
     </button>
   );
 }
@@ -1563,15 +1688,17 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
 }
 
 function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: () => void }) {
+  const t = useT();
+  const { lang } = useLang();
   const score = audit ? Math.round(audit.shareOfAnswer * 10) : 3;
-  const bizName = audit?.business.name ?? "tu negocio";
-  const enginesLabel = audit ? listEngines(Object.keys(audit.byEngine)) : "Perplexity";
+  const bizName = audit?.business.name ?? t("app.yourBiz");
+  const enginesLabel = audit ? listEngines(Object.keys(audit.byEngine), lang) : "Perplexity";
   const realProbes = audit ? uniqueProbes(audit.probes ?? []) : [];
   const gotProbes = realProbes.filter((p) => p.appeared);
   const missedProbes = realProbes.filter((p) => !p.appeared);
   const suggestions = audit
-    ? ["¿En qué búsquedas no aparezco?", "¿Cómo voy por motor?", "Genérame el texto optimizado"]
-    : SUGGESTIONS;
+    ? [t("chat.sug.missing"), t("chat.sug.byEngine"), t("chat.sug.genCopy")]
+    : [t("chat.sug.appear"), t("chat.sug.romantic"), t("chat.sug.osteria")];
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -1580,21 +1707,22 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
   // Boot del agente: piensa 900ms y suelta el mensaje inicial.
   useEffect(() => {
     setThinking(true);
-    const t = setTimeout(() => {
+    const tm = setTimeout(() => {
       setMessages([
         {
           role: "bot",
-          think: "Analizando tu negocio…",
+          think: t("chat.bootThink"),
           text: (
             <>
-              Analicé la presencia de <b>{bizName}</b> en {enginesLabel}: {scoreLine(score)} Tengo acciones concretas para que te elijan más. Si tienes dudas sobre AEO o cómo funciona esto, pregúntame primero; si no, empezamos por la de mayor impacto.
+              {t("chat.bootA")} <b>{bizName}</b> {lang === "es" ? "en" : "in"} {enginesLabel}:{" "}
+              {scoreLine(score, lang)} {t("chat.bootTail")}
             </>
           ),
         },
       ]);
       setThinking(false);
     }, 900);
-    return () => clearTimeout(t);
+    return () => clearTimeout(tm);
   }, []);
 
   useEffect(() => {
@@ -1603,13 +1731,13 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
   }, [messages, thinking]);
 
   function send(text: string) {
-    const t = text.trim();
-    if (!t) return;
-    setMessages((m) => [...m, { role: "me", text: t }]);
+    const v = text.trim();
+    if (!v) return;
+    setMessages((m) => [...m, { role: "me", text: v }]);
     setInput("");
     setThinking(true);
     window.setTimeout(() => {
-      const answer = audit ? answerReal(t, audit) : pickAnswer(t);
+      const answer = audit ? answerReal(v, audit, lang) : pickAnswer(v, lang);
       setMessages((m) => [...m, { role: "bot", text: answer }]);
       setThinking(false);
     }, 900);
@@ -1621,38 +1749,36 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
         <div className="lhead">
           <div className="auto">
             <span className="pulse" />
-            Lo que la IA entiende de {bizName}
+            {t("report.whatAI", { name: bizName })}
           </div>
           <button className="histbtn" type="button" onClick={onHistory}>
             <Ic ic="clock" size={12} />
-            Ver historial
+            {t("report.viewHistory")}
           </button>
         </div>
         <div className="lbody">
           <div className="metric">
             <div className="metric-row">
-              <span className="metric-n">{score} de 10</span>
-              {!audit && <span className="metric-trend">+1 esta semana</span>}
+              <span className="metric-n">{t("report.ofTen", { n: score })}</span>
+              {!audit && <span className="metric-trend">{t("report.trendWeek")}</span>}
             </div>
-            <div className="metric-lbl">
-              Cuánto te eligen cuando buscan un negocio como el tuyo
-            </div>
+            <div className="metric-lbl">{t("report.metricLbl")}</div>
           </div>
           {audit ? (
             <>
-              <h2>Keywords a trabajar</h2>
+              <h2>{t("report.kwTitle")}</h2>
               <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5, margin: "-6px 0 18px" }}>
-                Te recomiendan en{" "}
+                {t("report.kwIntroA")}{" "}
                 <b style={{ color: "var(--text)" }}>
-                  {gotProbes.length} de {realProbes.length}
+                  {t("report.ofN", { a: gotProbes.length, b: realProbes.length })}
                 </b>{" "}
-                búsquedas de clientes. Prioriza las que aún no cubres: son tu mayor oportunidad.
+                {t("report.kwIntroC")}
               </div>
 
               {missedProbes.length > 0 && (
                 <>
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-2)", margin: "20px 0 12px" }}>
-                    Sin presencia · {missedProbes.length}
+                    {t("report.noPresence")} · {missedProbes.length}
                   </div>
                   {missedProbes.map((p, i) => (
                     <div className="know" key={"m" + i}>
@@ -1660,9 +1786,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
                         <span className="chk miss" />
                         {p.query}
                       </div>
-                      <div className="kd op">
-                        Aún no te recomiendan aquí. Optimiza tu contenido para esta búsqueda.
-                      </div>
+                      <div className="kd op">{t("report.missHint")}</div>
                       {p.answer && <AiAnswer text={p.answer} />}
                     </div>
                   ))}
@@ -1672,7 +1796,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
               {gotProbes.length > 0 && (
                 <>
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-2)", margin: "20px 0 12px" }}>
-                    Con presencia · {gotProbes.length}
+                    {t("report.hasPresence")} · {gotProbes.length}
                   </div>
                   {gotProbes.map((p, i) => (
                     <div className="know" key={"g" + i}>
@@ -1685,7 +1809,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
                         {p.query}
                       </div>
                       <div className="kd">
-                        {p.position ? `Apareces · puesto #${p.position}` : "Apareces en esta búsqueda"}
+                        {p.position ? t("report.rank", { n: p.position }) : t("report.appearHere")}
                       </div>
                       {p.answer && <AiAnswer text={p.answer} />}
                     </div>
@@ -1695,7 +1819,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
             </>
           ) : (
             <>
-              <h2>Lo que ChatGPT, Perplexity y Gemini saben de ti</h2>
+              <h2>{t("report.demoKnow")}</h2>
               {KNOW_ITEMS.map((k, i) => (
                 <div className="know" key={i}>
                   <div className="kt">
@@ -1727,7 +1851,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
           </span>
           <div>
             <b>Halo</b>
-            <small>Asistente de visibilidad</small>
+            <small>{t("chat.assistant")}</small>
           </div>
         </div>
         <div className="rbody" ref={bodyRef}>
@@ -1752,7 +1876,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
             <div className="msg bot">
               <div className="think">
                 <Ic ic="spark" size={11} />
-                Halo lo está pensando…
+                {t("chat.thinking")}
               </div>
             </div>
           )}
@@ -1760,14 +1884,14 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
         <div className="rfoot">
           <div className="cbox">
             <input
-              placeholder="Pregúntale a Halo…"
+              placeholder={t("chat.placeholder")}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") send(input);
               }}
             />
-            <button className="snd" type="button" aria-label="Enviar" onClick={() => send(input)}>
+            <button className="snd" type="button" aria-label={t("chat.send")} onClick={() => send(input)}>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
