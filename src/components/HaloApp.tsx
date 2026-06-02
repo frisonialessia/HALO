@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
+import { addHistory, listHistory, removeHistory, type HistoryEntry } from "@/lib/history";
 
 // ============== Orbe (logo) ==============
 function Orb({ className = "", thinking = false }: { className?: string; thinking?: boolean }) {
@@ -90,7 +91,7 @@ function AiIcon() {
 
 // ============== Tipos ==============
 type Screen = "landing" | "loading" | "app";
-type View = "halo" | "dash" | "set";
+type View = "halo" | "dash" | "set" | "hist";
 type Msg = { role: "bot" | "me"; text: ReactNode; think?: string };
 type AuditData = {
   business: { name: string; business_type: string; city?: string; website?: string };
@@ -325,12 +326,28 @@ export default function HaloApp() {
   const [auditErr, setAuditErr] = useState("");
   const [prefillName, setPrefillName] = useState("");
   const [analyzingLabel, setAnalyzingLabel] = useState("tu negocio");
+  const [history, setHistory] = useState<HistoryEntry<AuditData>[]>([]);
 
   useEffect(() => {
     if (screen !== "landing") return;
     const t = setInterval(() => setSectorIdx((i) => (i + 1) % SECTORS.length), 2200);
     return () => clearInterval(t);
   }, [screen]);
+
+  // Carga el historial guardado en el navegador (interino hasta Supabase).
+  useEffect(() => {
+    setHistory(listHistory<AuditData>());
+  }, []);
+
+  // Guarda una auditoría en el historial local y devuelve la lista nueva.
+  function rememberAudit(a: AuditData) {
+    return addHistory<AuditData>({
+      label: a.business.name,
+      sub: a.business.city || a.business.business_type,
+      score: Math.round(a.shareOfAnswer * 10),
+      data: a,
+    });
+  }
 
   // Anima los pasos de carga mientras esperamos la respuesta real (no termina solo).
   function runLoadingSteps(): () => void {
@@ -369,7 +386,9 @@ export default function HaloApp() {
       }
       if (!res.ok) throw new Error(data?.error || "No se pudo analizar");
       setLoadDone(LOAD_STEPS.length - 1);
-      setAudit(data as AuditData);
+      const auditData = data as AuditData;
+      setAudit(auditData);
+      setHistory(rememberAudit(auditData));
       setScreen("app");
       setView("halo");
     } catch (e) {
@@ -403,10 +422,12 @@ export default function HaloApp() {
       stop();
       if (!res.ok) throw new Error(data?.error || "No se pudo analizar");
       setLoadDone(LOAD_STEPS.length - 1);
-      setAudit({
+      const auditData = {
         business: { name, business_type, city: city.trim() || undefined },
         ...data,
-      } as AuditData);
+      } as AuditData;
+      setAudit(auditData);
+      setHistory(rememberAudit(auditData));
       setScreen("app");
       setView("halo");
     } catch (e) {
@@ -434,6 +455,24 @@ export default function HaloApp() {
   function enterApp() {
     setScreen("app");
     setView("halo");
+  }
+
+  // Abre una auditoría guardada del historial.
+  function selectFromHistory(entry: HistoryEntry<AuditData>) {
+    setAudit(entry.data);
+    setScreen("app");
+    setView("halo");
+  }
+
+  // "Analizar un negocio nuevo": vuelve a la landing con el campo limpio.
+  function newAnalysis() {
+    setBizInput("");
+    setMenuOpen(false);
+    setScreen("landing");
+  }
+
+  function removeFromHistory(id: string) {
+    setHistory(removeHistory<AuditData>(id));
   }
 
   return (
@@ -605,6 +644,10 @@ export default function HaloApp() {
           onAnalyze={runManualAudit}
           prefillName={prefillName}
           auditErr={auditErr}
+          history={history}
+          onSelectAudit={selectFromHistory}
+          onNewAnalysis={newAnalysis}
+          onRemoveHistory={removeFromHistory}
         />
       )}
     </>
@@ -622,6 +665,10 @@ function AppShell({
   onAnalyze,
   prefillName,
   auditErr,
+  history,
+  onSelectAudit,
+  onNewAnalysis,
+  onRemoveHistory,
 }: {
   view: View;
   setView: (v: View) => void;
@@ -632,6 +679,10 @@ function AppShell({
   onAnalyze: (name: string, business_type: string, city: string) => void;
   prefillName: string;
   auditErr: string;
+  history: HistoryEntry<AuditData>[];
+  onSelectAudit: (e: HistoryEntry<AuditData>) => void;
+  onNewAnalysis: () => void;
+  onRemoveHistory: (id: string) => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -679,7 +730,15 @@ function AppShell({
                 >
                   Ajustes y conexiones
                 </div>
-                <div className="di">Cambiar de negocio</div>
+                <div
+                  className="di"
+                  onClick={() => {
+                    setView("hist");
+                    setMenuOpen(false);
+                  }}
+                >
+                  Cambiar de negocio
+                </div>
                 <div className="sep" />
                 <div
                   className="di out"
@@ -697,8 +756,17 @@ function AppShell({
       </header>
 
       <div className="stage">
-        {view === "halo" && <HaloView audit={audit} />}
+        {view === "halo" && <HaloView audit={audit} onHistory={() => setView("hist")} />}
         {view === "dash" && <DashView audit={audit} />}
+        {view === "hist" && (
+          <HistoryView
+            entries={history}
+            onSelect={onSelectAudit}
+            onNew={onNewAnalysis}
+            onRemove={onRemoveHistory}
+            setView={setView}
+          />
+        )}
         {view === "set" && (
           <SettingsView
             setView={setView}
@@ -1000,7 +1068,7 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
   );
 }
 
-function HaloView({ audit }: { audit: AuditData | null }) {
+function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: () => void }) {
   const score = audit ? Math.round(audit.shareOfAnswer * 10) : 3;
   const bizName = audit?.business.name ?? "tu negocio";
   const enginesLabel = audit ? listEngines(Object.keys(audit.byEngine)) : "Perplexity";
@@ -1059,7 +1127,7 @@ function HaloView({ audit }: { audit: AuditData | null }) {
             <span className="pulse" />
             Lo que la IA entiende de {bizName}
           </div>
-          <button className="histbtn" type="button">
+          <button className="histbtn" type="button" onClick={onHistory}>
             <Ic ic="clock" size={12} />
             Ver historial
           </button>
@@ -1482,6 +1550,133 @@ function DashReal({ audit }: { audit: AuditData }) {
         </div>
       </div>
     </>
+  );
+}
+
+// ============== Vista HISTORIAL (guardado local) ==============
+function fmtDate(ms: number): string {
+  try {
+    return new Date(ms).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  } catch {
+    return "";
+  }
+}
+
+function HistoryView({
+  entries,
+  onSelect,
+  onNew,
+  onRemove,
+  setView,
+}: {
+  entries: HistoryEntry<AuditData>[];
+  onSelect: (e: HistoryEntry<AuditData>) => void;
+  onNew: () => void;
+  onRemove: (id: string) => void;
+  setView: (v: View) => void;
+}) {
+  return (
+    <div>
+      <div className="dtitle">
+        <h1>Tu historial</h1>
+      </div>
+      <div className="setwrap">
+        <span className="backlink" onClick={() => setView("halo")}>
+          <Ic ic="back" size={13} />
+          Volver
+        </span>
+
+        <button
+          type="button"
+          onClick={onNew}
+          style={{
+            border: "none",
+            background: "var(--text)",
+            color: "#fff",
+            borderRadius: "var(--r-btn)",
+            padding: "12px 18px",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            marginBottom: 16,
+          }}
+        >
+          + Analizar un negocio nuevo
+        </button>
+
+        {entries.length === 0 ? (
+          <div
+            className="glass"
+            style={{ padding: 24, textAlign: "center", fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5 }}
+          >
+            Aún no has analizado ningún negocio. Pega tu web y te medimos en segundos.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 10 }}>
+            {entries.map((e) => (
+              <div
+                className="glass"
+                key={e.id}
+                onClick={() => onSelect(e)}
+                style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer" }}
+              >
+                <div
+                  style={{
+                    flexShrink: 0,
+                    width: 46,
+                    height: 46,
+                    borderRadius: 10,
+                    background: "var(--sand)",
+                    border: "1px solid var(--gline)",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: 17,
+                    fontWeight: 700,
+                    color: "var(--text)",
+                  }}
+                >
+                  {e.score}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{ fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    {e.label}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)" }}>
+                    {e.sub ? `${e.sub} · ` : ""}
+                    {e.score} de 10 · {fmtDate(e.createdAt)}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Eliminar"
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    onRemove(e.id);
+                  }}
+                  style={{
+                    flexShrink: 0,
+                    border: "1px solid var(--gline)",
+                    background: "#fff",
+                    color: "var(--text-2)",
+                    borderRadius: 6,
+                    width: 30,
+                    height: 30,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    fontSize: 14,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
