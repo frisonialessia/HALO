@@ -1,4 +1,4 @@
-import type { Project, ProbeResult, AuditResult, Engine } from "@/types";
+import type { Project, ProbeResult, AuditResult, Engine, Lang } from "@/types";
 import { buildQueries } from "@/lib/queries";
 import { probePerplexity } from "@/lib/engines/perplexity";
 import { probeChatGPT } from "@/lib/engines/openai";
@@ -30,8 +30,8 @@ function activeEngines(): { engine: Engine; probe: EngineProbe }[] {
   return list;
 }
 
-export async function runAudit(project: Project): Promise<AuditResult> {
-  const queries = buildQueries(project);
+export async function runAudit(project: Project, lang: Lang = "en"): Promise<AuditResult> {
+  const queries = buildQueries(project, lang);
   const engines = activeEngines();
 
   // Producto queries × motores, todo en paralelo.

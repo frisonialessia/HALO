@@ -25,10 +25,11 @@ export const dynamic = "force-dynamic";
 // el resto, opcional. website se normaliza a una URL razonable.
 const AuditRequest = z.object({
   id: z.string().optional(),
-  name: z.string().trim().min(1, "El nombre del negocio es obligatorio"),
-  business_type: z.string().trim().min(1, "El tipo de negocio es obligatorio"),
+  name: z.string().trim().min(1, "Business name is required"),
+  business_type: z.string().trim().min(1, "Business type is required"),
   city: z.string().trim().optional(),
   website: z.string().trim().optional(),
+  lang: z.enum(["en", "es"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -39,17 +40,18 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const parsed = AuditRequest.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid data" },
       { status: 400 }
     );
   }
 
+  const lang = parsed.data.lang ?? "en";
   const project: Project = {
     id: parsed.data.id ?? "temp",
     name: parsed.data.name,
@@ -58,18 +60,24 @@ export async function POST(req: NextRequest) {
     website: parsed.data.website,
   };
 
-  const key = cacheKey("audit", `${project.name}|${project.business_type}|${project.city ?? ""}`);
+  const key = cacheKey(
+    "audit",
+    `${lang}|${project.name}|${project.business_type}|${project.city ?? ""}`
+  );
   const hit = await getCached(key);
   if (hit) return NextResponse.json(hit);
 
   try {
-    const result = await runAudit(project);
+    const result = await runAudit(project, lang);
     await setCached(key, result);
     return NextResponse.json(result);
   } catch (err) {
     console.error("Error en auditoría:", err);
     return NextResponse.json(
-      { error: "No se pudo completar la auditoría" },
+      {
+        error:
+          lang === "es" ? "No se pudo completar la auditoría" : "We couldn't complete the audit",
+      },
       { status: 500 }
     );
   }

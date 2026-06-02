@@ -5,6 +5,8 @@
 // Usa Perplexity (sonar) para mantener un solo proveedor y aprovechar que
 // está conectado a la web real.
 
+import type { Lang } from "@/types";
+
 const PPLX_URL = "https://api.perplexity.ai/chat/completions";
 
 export interface AiAssets {
@@ -21,17 +23,47 @@ export interface AssetsInput {
   missedQueries?: string[];
 }
 
-export async function generateAssets(input: AssetsInput): Promise<AiAssets> {
+export async function generateAssets(
+  input: AssetsInput,
+  lang: Lang = "en"
+): Promise<AiAssets> {
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) throw new Error("Falta PERPLEXITY_API_KEY");
+  const es = lang === "es";
 
-  const where = input.city ? ` en ${input.city}` : "";
+  const where = input.city ? (es ? ` en ${input.city}` : ` in ${input.city}`) : "";
   const missed = (input.missedQueries ?? []).filter(Boolean).slice(0, 6);
+  const quoted = missed.map((q) => `"${q}"`).join(", ");
   const missedBlock = missed.length
-    ? ` Hoy NO aparece cuando los clientes preguntan a la IA: ${missed
-        .map((q) => `"${q}"`)
-        .join(", ")}. Prioriza cubrir justo esas búsquedas.`
+    ? es
+      ? ` Hoy NO aparece cuando los clientes preguntan a la IA: ${quoted}. Prioriza cubrir justo esas búsquedas.`
+      : ` Today it does NOT appear when customers ask the AI: ${quoted}. Prioritize covering exactly those searches.`
     : "";
+
+  const system = es
+    ? "Eres un experto en AEO/GEO: optimizas negocios para que los asistentes " +
+      "de IA (ChatGPT, Perplexity, Gemini) los recomienden a sus usuarios. " +
+      "Escribes en español, concreto, sin relleno ni promesas vacías. " +
+      "Devuelve SOLO un objeto JSON válido (sin markdown ni texto alrededor) " +
+      "con estas claves exactas: " +
+      "description (string: 50-70 palabras describiendo el negocio de forma que una IA lo cite con seguridad: qué es, dónde está y qué lo hace especial), " +
+      "faqs (array de 5 objetos {q, a}: q es una pregunta tal y como un cliente se la haría a una IA; a es la respuesta de 1-2 frases que menciona el negocio con naturalidad), " +
+      "tips (array de 3 strings: acciones concretas y realizables para mejorar su presencia en IA)."
+    : "You are an AEO/GEO expert: you optimize businesses so AI assistants " +
+      "(ChatGPT, Perplexity, Gemini) recommend them to their users. " +
+      "You write in English, concrete, with no filler or empty promises. " +
+      "Return ONLY a valid JSON object (no markdown or surrounding text) " +
+      "with these exact keys: " +
+      "description (string: 50-70 words describing the business so an AI cites it confidently: what it is, where it is and what makes it special), " +
+      "faqs (array of 5 objects {q, a}: q is a question exactly as a customer would ask an AI; a is a 1-2 sentence answer that mentions the business naturally), " +
+      "tips (array of 3 strings: concrete, doable actions to improve its AI presence).";
+
+  const userContent =
+    (es
+      ? `Negocio: ${input.name}. Tipo: ${input.business_type}${where}.`
+      : `Business: ${input.name}. Type: ${input.business_type}${where}.`) +
+    (input.website ? (es ? ` Web: ${input.website}.` : ` Website: ${input.website}.`) : "") +
+    missedBlock;
 
   const res = await fetch(PPLX_URL, {
     method: "POST",
@@ -43,25 +75,8 @@ export async function generateAssets(input: AssetsInput): Promise<AiAssets> {
       model: "sonar",
       max_tokens: 900,
       messages: [
-        {
-          role: "system",
-          content:
-            "Eres un experto en AEO/GEO: optimizas negocios para que los asistentes " +
-            "de IA (ChatGPT, Perplexity, Gemini) los recomienden a sus usuarios. " +
-            "Escribes en español, concreto, sin relleno ni promesas vacías. " +
-            "Devuelve SOLO un objeto JSON válido (sin markdown ni texto alrededor) " +
-            "con estas claves exactas: " +
-            "description (string: 50-70 palabras describiendo el negocio de forma que una IA lo cite con seguridad: qué es, dónde está y qué lo hace especial), " +
-            "faqs (array de 5 objetos {q, a}: q es una pregunta tal y como un cliente se la haría a una IA; a es la respuesta de 1-2 frases que menciona el negocio con naturalidad), " +
-            "tips (array de 3 strings: acciones concretas y realizables para mejorar su presencia en IA).",
-        },
-        {
-          role: "user",
-          content:
-            `Negocio: ${input.name}. Tipo: ${input.business_type}${where}.` +
-            (input.website ? ` Web: ${input.website}.` : "") +
-            missedBlock,
-        },
+        { role: "system", content: system },
+        { role: "user", content: userContent },
       ],
     }),
   });

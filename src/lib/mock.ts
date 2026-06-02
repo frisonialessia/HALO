@@ -4,7 +4,7 @@
 // gastar una sola llamada de API. Determinista por input → demos reproducibles.
 
 import { buildQueries } from "@/lib/queries";
-import type { BusinessKind } from "@/types";
+import type { BusinessKind, Lang } from "@/types";
 
 export interface MockProbe {
   query: string;
@@ -43,46 +43,47 @@ function seeded(str: string): () => number {
 // naturaleza (local / producto / online), para que la preview use las mismas
 // búsquedas que el motor real. Sin API: diccionario de señales. El análisis
 // real lo afina con precisión.
-const TYPE_HINTS: [RegExp, string, BusinessKind][] = [
-  [/vermouth|vermut/, "vermut", "product"],
-  [/ginebra|\bgin\b/, "ginebra", "product"],
-  [/whisk/, "whisky", "product"],
-  [/\bvino\b|bodega/, "vino", "product"],
-  [/cerveza artesanal|craft beer/, "cerveza artesanal", "product"],
-  [/pizz/, "pizzería", "local"],
-  [/sushi|ramen|japones|nikkei/, "restaurante japonés", "local"],
-  [/taquer|tacos|mexican/, "restaurante mexicano", "local"],
-  [/trattor|osteria|italian|pasta/, "restaurante italiano", "local"],
-  [/burger|hamburgues/, "hamburguesería", "local"],
-  [/restaur|asador|marisquer|tapas|bistro|brasserie|grill|cocina/, "restaurante", "local"],
-  [/cafe|coffee|cafeter|brunch/, "cafetería", "local"],
-  [/cocktail|cocteler|\bpub\b|cervec|\bbar\b/, "bar", "local"],
-  [/panad|bakery|paste|reposter|croissant/, "panadería", "local"],
-  [/helad|gelato|icecream/, "heladería", "local"],
-  [/dental|odonto|dentist/, "clínica dental", "local"],
-  [/clinic|medic|fisio|physio|psico|terap|salud|estetic|belleza|\bspa\b/, "clínica", "local"],
-  [/veterinar|mascot/, "clínica veterinaria", "local"],
-  [/peluqu|barber|salon|estilist|nails/, "peluquería", "local"],
-  [/gym|gimnas|fitness|crossfit|yoga|pilates/, "gimnasio", "local"],
-  [/hotel|hostal|hostel|aparthotel|alojamiento/, "hotel", "local"],
-  [/inmobil|realestate|propiedad|vivienda/, "inmobiliaria", "local"],
-  [/abogad|legal|\blaw\b|jurid|asesor|gestor/, "despacho de abogados", "local"],
-  [/taller|mecanic|automo|neumatic/, "taller mecánico", "local"],
-  [/floris|flores/, "floristería", "local"],
-  [/joyer|relojer/, "joyería", "local"],
-  [/librer/, "librería", "local"],
-  [/academ|escuela|formacion|cursos|idiomas/, "academia", "local"],
-  [/tienda|\bshop\b|store|boutique|moda|\bropa\b/, "tienda online", "online"],
-  [/saas|software|\bapp\b|plataforma|\bcrm\b|\berp\b/, "software", "online"],
-  [/agencia|marketing|publicidad|consultor|studio|estudio/, "agencia", "online"],
+const TYPE_HINTS: [RegExp, string, string, BusinessKind][] = [
+  [/vermouth|vermut/, "vermut", "vermouth", "product"],
+  [/ginebra|\bgin\b/, "ginebra", "gin", "product"],
+  [/whisk/, "whisky", "whisky", "product"],
+  [/\bvino\b|bodega/, "vino", "wine", "product"],
+  [/cerveza artesanal|craft beer/, "cerveza artesanal", "craft beer", "product"],
+  [/pizz/, "pizzería", "pizzeria", "local"],
+  [/sushi|ramen|japones|nikkei/, "restaurante japonés", "Japanese restaurant", "local"],
+  [/taquer|tacos|mexican/, "restaurante mexicano", "Mexican restaurant", "local"],
+  [/trattor|osteria|italian|pasta/, "restaurante italiano", "Italian restaurant", "local"],
+  [/burger|hamburgues/, "hamburguesería", "burger joint", "local"],
+  [/restaur|asador|marisquer|tapas|bistro|brasserie|grill|cocina/, "restaurante", "restaurant", "local"],
+  [/cafe|coffee|cafeter|brunch/, "cafetería", "café", "local"],
+  [/cocktail|cocteler|\bpub\b|cervec|\bbar\b/, "bar", "bar", "local"],
+  [/panad|bakery|paste|reposter|croissant/, "panadería", "bakery", "local"],
+  [/helad|gelato|icecream/, "heladería", "ice cream shop", "local"],
+  [/dental|odonto|dentist/, "clínica dental", "dental clinic", "local"],
+  [/clinic|medic|fisio|physio|psico|terap|salud|estetic|belleza|\bspa\b/, "clínica", "clinic", "local"],
+  [/veterinar|mascot/, "clínica veterinaria", "veterinary clinic", "local"],
+  [/peluqu|barber|salon|estilist|nails/, "peluquería", "hair salon", "local"],
+  [/gym|gimnas|fitness|crossfit|yoga|pilates/, "gimnasio", "gym", "local"],
+  [/hotel|hostal|hostel|aparthotel|alojamiento/, "hotel", "hotel", "local"],
+  [/inmobil|realestate|propiedad|vivienda/, "inmobiliaria", "real estate agency", "local"],
+  [/abogad|legal|\blaw\b|jurid|asesor|gestor/, "despacho de abogados", "law firm", "local"],
+  [/taller|mecanic|automo|neumatic/, "taller mecánico", "auto repair shop", "local"],
+  [/floris|flores/, "floristería", "flower shop", "local"],
+  [/joyer|relojer/, "joyería", "jewelry store", "local"],
+  [/librer/, "librería", "bookstore", "local"],
+  [/academ|escuela|formacion|cursos|idiomas/, "academia", "academy", "local"],
+  [/tienda|\bshop\b|store|boutique|moda|\bropa\b/, "tienda online", "online store", "online"],
+  [/saas|software|\bapp\b|plataforma|\bcrm\b|\berp\b/, "software", "software", "online"],
+  [/agencia|marketing|publicidad|consultor|studio|estudio/, "agencia", "agency", "online"],
 ];
 
-function guessBusiness(input: string): { type?: string; kind: BusinessKind } {
+function guessBusiness(input: string, lang: Lang): { type?: string; kind: BusinessKind } {
   const t = input
     .toLowerCase()
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "");
-  for (const [re, type, kind] of TYPE_HINTS) if (re.test(t)) return { type, kind };
+  for (const [re, es, en, kind] of TYPE_HINTS)
+    if (re.test(t)) return { type: lang === "es" ? es : en, kind };
   return { kind: "local" };
 }
 
@@ -90,6 +91,7 @@ function guessBusiness(input: string): { type?: string; kind: BusinessKind } {
 // Útil para "modo simulado" de cualquier búsqueda sin coste.
 export function mockAudit(
   input: string,
+  lang: Lang = "en",
   business?: Partial<MockAudit["business"]>
 ): MockAudit {
   const rnd = seeded(input.trim().toLowerCase() || "halo");
@@ -99,22 +101,26 @@ export function mockAudit(
       .trim()
       .replace(/^https?:\/\//, "")
       .replace(/^www\./, "")
-      .replace(/\/.*$/, "") || "Tu negocio";
-  const guess = guessBusiness(input);
+      .replace(/\/.*$/, "") || (lang === "es" ? "Tu negocio" : "Your business");
+  const guess = guessBusiness(input, lang);
   const biz = {
     name: business?.name || cleanName,
-    business_type: business?.business_type || guess.type || "negocio local",
+    business_type:
+      business?.business_type || guess.type || (lang === "es" ? "negocio local" : "local business"),
     city: business?.city,
     website: business?.website,
   };
 
-  const queries = buildQueries({
-    id: "temp",
-    name: biz.name,
-    business_type: biz.business_type,
-    kind: guess.kind,
-    city: biz.city,
-  });
+  const queries = buildQueries(
+    {
+      id: "temp",
+      name: biz.name,
+      business_type: biz.business_type,
+      kind: guess.kind,
+      city: biz.city,
+    },
+    lang
+  );
   const probes: MockProbe[] = queries.map((q) => {
     const appeared = rnd() < 0.4;
     return { query: q, appeared, position: appeared ? 1 + Math.floor(rnd() * 4) : undefined };

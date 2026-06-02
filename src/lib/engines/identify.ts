@@ -1,4 +1,4 @@
-import type { Project, BusinessKind } from "@/types";
+import type { Project, BusinessKind, Lang } from "@/types";
 
 // Identifica un negocio a partir de lo que el usuario pega en la landing:
 // una URL, un nombre, un enlace de Google Maps o un perfil de redes.
@@ -15,9 +15,13 @@ export interface IdentifiedBusiness {
   website?: string;
 }
 
-export async function identifyBusiness(input: string): Promise<IdentifiedBusiness> {
+export async function identifyBusiness(
+  input: string,
+  lang: Lang = "en"
+): Promise<IdentifiedBusiness> {
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) throw new Error("Falta PERPLEXITY_API_KEY");
+  const langName = lang === "es" ? "Spanish" : "English";
 
   const res = await fetch(PPLX_URL, {
     method: "POST",
@@ -32,14 +36,14 @@ export async function identifyBusiness(input: string): Promise<IdentifiedBusines
         {
           role: "system",
           content:
-            "Identificas QUÉ te da el usuario (una web, una marca, un producto, un negocio " +
-            "local o un servicio online) y devuelves datos estructurados. " +
-            "Devuelve SOLO un objeto JSON válido, sin texto ni markdown alrededor, con estas claves: " +
-            'name (nombre real de la marca o negocio); ' +
-            'business_type (categoría en español, concreta y en singular: "restaurante italiano", "vermut", "software de facturación", "ropa deportiva"); ' +
-            'kind ("local" si es un negocio con ubicación física donde acuden clientes; "product" si es una marca o producto que se compra; "online" si es un servicio, web o SaaS sin ubicación física); ' +
-            'city (solo si kind es "local" y la conoces; si no, cadena vacía); ' +
-            'website (dominio si lo conoces; si no, cadena vacía).',
+            "You identify WHAT the user gives you (a website, a brand, a product, a local " +
+            "business or an online service) and return structured data. " +
+            "Return ONLY a valid JSON object, with no surrounding text or markdown, with these keys: " +
+            "name (the real brand or business name); " +
+            `business_type (category in ${langName}, specific and singular, e.g. "Italian restaurant", "vermouth", "invoicing software", "sportswear"); ` +
+            'kind ("local" if it is a business with a physical location customers visit; "product" if it is a brand or product that is purchased; "online" if it is a service, website or SaaS with no physical location); ' +
+            'city (only if kind is "local" and you know it; otherwise empty string); ' +
+            'website (domain if you know it; otherwise empty string).',
         },
         { role: "user", content: input },
       ],

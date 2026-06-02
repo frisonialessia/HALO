@@ -1,5 +1,8 @@
 // Tipos compartidos del cerebro de Halo
 
+// Idioma del análisis/contenido generado (inglés por defecto).
+export type Lang = "en" | "es";
+
 export type Engine =
   | "perplexity"
   | "chatgpt"

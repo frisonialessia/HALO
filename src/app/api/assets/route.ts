@@ -13,11 +13,12 @@ export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 const AssetsRequest = z.object({
-  name: z.string().trim().min(1, "El nombre del negocio es obligatorio"),
-  business_type: z.string().trim().min(1, "El tipo de negocio es obligatorio"),
+  name: z.string().trim().min(1, "Business name is required"),
+  business_type: z.string().trim().min(1, "Business type is required"),
   city: z.string().trim().optional(),
   website: z.string().trim().optional(),
   missedQueries: z.array(z.string()).optional(),
+  lang: z.enum(["en", "es"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -28,24 +29,30 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const parsed = AssetsRequest.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid data" },
       { status: 400 }
     );
   }
 
+  const lang = parsed.data.lang ?? "en";
   try {
-    const assets = await generateAssets(parsed.data);
+    const assets = await generateAssets(parsed.data, lang);
     return NextResponse.json(assets);
   } catch (err) {
     console.error("Error en /api/assets:", err);
     return NextResponse.json(
-      { error: "No pudimos generar el texto. Inténtalo de nuevo." },
+      {
+        error:
+          lang === "es"
+            ? "No pudimos generar el texto. Inténtalo de nuevo."
+            : "We couldn't generate the copy. Please try again.",
+      },
       { status: 502 }
     );
   }

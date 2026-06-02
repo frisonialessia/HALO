@@ -633,7 +633,7 @@ export default function HaloApp() {
       setTimeout(() => setLoadDone(i), 350 + i * 480);
     });
     setTimeout(() => {
-      setAudit(mockAudit(input));
+      setAudit(mockAudit(input, lang));
       setScreen("app");
       setView("halo");
     }, 350 + 4 * 480 + 250);
@@ -651,7 +651,7 @@ export default function HaloApp() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: q }),
+        body: JSON.stringify({ input: q, lang }),
       });
       const data = await res.json();
       stop();
@@ -700,7 +700,7 @@ export default function HaloApp() {
       const res = await fetch("/api/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, business_type, city: city.trim() }),
+        body: JSON.stringify({ name, business_type, city: city.trim(), lang }),
       });
       const data = await res.json();
       stop();
@@ -1487,6 +1487,7 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
           city: audit.business.city,
           website: audit.business.website,
           missedQueries,
+          lang,
         }),
       });
       const data = await res.json();
