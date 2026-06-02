@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
 import { addHistory, listHistory, removeHistory, type HistoryEntry } from "@/lib/history";
 import { isValidEmail, rememberLeadEmail, savedLeadEmail, submitLead } from "@/lib/lead";
 import { DEMO_AUDIT } from "@/lib/mock";
+import { loadPrefs, savePrefs } from "@/lib/prefs";
 
 // ============== Orbe (logo) ==============
 function Orb({ className = "", thinking = false }: { className?: string; thinking?: boolean }) {
@@ -1775,18 +1776,41 @@ function SettingsView({
   const [bName, setBName] = useState(prefillName);
   const [bType, setBType] = useState("");
   const [bCity, setBCity] = useState("");
-  const [conns, setConns] = useState<Record<ConnKey, boolean>>({
-    web: true,
-    maps: false,
-    ig: false,
-    tk: false,
-    wa: false,
-  });
-  const [modes, setModes] = useState<Record<ModeKey, boolean>>({
-    expert: false,
-    watch: true,
-    auto: false,
-  });
+  const [conns, setConns] = useState<Record<ConnKey, boolean>>(() =>
+    loadPrefs("halo:connections", { web: true, maps: false, ig: false, tk: false, wa: false })
+  );
+  const [modes, setModes] = useState<Record<ModeKey, boolean>>(() =>
+    loadPrefs("halo:modes", { expert: false, watch: true, auto: false })
+  );
+  const [connecting, setConnecting] = useState<ConnKey | null>(null);
+
+  // Conexión "simulada-real": flujo creíble (Conectar → Conectando… → Conectado)
+  // y estado que PERSISTE (no se resetea al salir de Ajustes).
+  function toggleConn(key: ConnKey) {
+    if (conns[key]) {
+      const next = { ...conns, [key]: false };
+      setConns(next);
+      savePrefs("halo:connections", next);
+      return;
+    }
+    setConnecting(key);
+    setTimeout(() => {
+      setConns((c) => {
+        const next = { ...c, [key]: true };
+        savePrefs("halo:connections", next);
+        return next;
+      });
+      setConnecting(null);
+    }, 900);
+  }
+
+  function toggleMode(key: ModeKey) {
+    setModes((m) => {
+      const next = { ...m, [key]: !m[key] };
+      savePrefs("halo:modes", next);
+      return next;
+    });
+  }
 
   const CONNS: { key: ConnKey; ic: IcName; title: string; desc: string }[] = [
     { key: "web", ic: "globe", title: "Tu sitio web", desc: "Escaneamos tu web para leer tu información y mejorarla." },
@@ -1862,9 +1886,10 @@ function SettingsView({
                 <button
                   type="button"
                   className={`connectbtn ${on ? "done" : ""}`}
-                  onClick={() => setConns((c) => ({ ...c, [key]: !c[key] }))}
+                  disabled={connecting === key}
+                  onClick={() => toggleConn(key)}
                 >
-                  {on ? "Conectado" : "Conectar"}
+                  {connecting === key ? "Conectando…" : on ? "Conectado" : "Conectar"}
                 </button>
               </div>
             );
@@ -1887,7 +1912,7 @@ function SettingsView({
             </div>
             <div
               className={`toggle ${modes.expert ? "on" : ""}`}
-              onClick={() => setModes((m) => ({ ...m, expert: !m.expert }))}
+              onClick={() => toggleMode("expert")}
               role="switch"
               aria-checked={modes.expert}
             >
@@ -1910,7 +1935,7 @@ function SettingsView({
             </div>
             <div
               className={`toggle ${modes.watch ? "on" : ""}`}
-              onClick={() => setModes((m) => ({ ...m, watch: !m.watch }))}
+              onClick={() => toggleMode("watch")}
               role="switch"
               aria-checked={modes.watch}
             >
@@ -1929,7 +1954,7 @@ function SettingsView({
             </div>
             <div
               className={`toggle ${modes.auto ? "on" : ""}`}
-              onClick={() => setModes((m) => ({ ...m, auto: !m.auto }))}
+              onClick={() => toggleMode("auto")}
               role="switch"
               aria-checked={modes.auto}
             >
