@@ -2,6 +2,7 @@ import type { Project, ProbeResult, AuditResult, Engine } from "@/types";
 import { buildQueries } from "@/lib/queries";
 import { probePerplexity } from "@/lib/engines/perplexity";
 import { probeChatGPT } from "@/lib/engines/openai";
+import { probeGemini } from "@/lib/engines/gemini";
 
 // Orquesta una auditoría completa de un negocio sobre TODOS los motores
 // disponibles. El Share of Answer se promedia entre los resultados de todos.
@@ -18,6 +19,8 @@ function activeEngines(): { engine: Engine; probe: EngineProbe }[] {
     list.push({ engine: "perplexity", probe: probePerplexity });
   if (process.env.OPENAI_API_KEY)
     list.push({ engine: "chatgpt", probe: probeChatGPT });
+  if (process.env.GEMINI_API_KEY)
+    list.push({ engine: "gemini", probe: probeGemini });
 
   // Si no hay ninguna clave, intentamos Perplexity igual: lanzará un error
   // claro ("Falta PERPLEXITY_API_KEY") en lugar de devolver vacío en silencio.
