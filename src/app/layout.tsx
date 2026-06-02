@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Halo — Domina las recomendaciones de la IA",
+  title: "Halo",
   description:
     "Mide y mejora cómo ChatGPT, Perplexity y Gemini recomiendan tu negocio.",
 };
