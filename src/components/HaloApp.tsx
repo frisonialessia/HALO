@@ -82,17 +82,6 @@ function Ic({ ic, size = 14, className }: { ic: IcName; size?: number; className
   );
 }
 
-// Ícono "Pregúntale a tu IA" para la barra de la landing (placeholder en negro).
-function AiIcon() {
-  return (
-    <span className="ai-ic" aria-label="IA">
-      <svg viewBox="0 0 24 24" fill="#17181B" stroke="none">
-        <path d="M12 2.5l1.9 5.8a3 3 0 0 0 1.9 1.9L21.5 12l-5.8 1.9a3 3 0 0 0-1.9 1.9L12 21.5l-1.9-5.8a3 3 0 0 0-1.9-1.9L2.5 12l5.8-1.9a3 3 0 0 0 1.9-1.9L12 2.5z" />
-      </svg>
-    </span>
-  );
-}
-
 // ============== Tipos ==============
 type Screen = "landing" | "loading" | "app";
 type View = "halo" | "dash" | "set" | "hist";
@@ -662,10 +651,18 @@ export default function HaloApp() {
             <div className="lnav-links">
               <span className="ainav">
                 Pregúntale a tu IA:
-                <AiIcon />
-                <AiIcon />
-                <AiIcon />
-                <AiIcon />
+                <span className="ai-ic">
+                  <img src="/icons/openai.svg" alt="ChatGPT" width={13} height={13} />
+                </span>
+                <span className="ai-ic">
+                  <img src="/icons/claude.svg" alt="Claude" width={13} height={13} />
+                </span>
+                <span className="ai-ic">
+                  <img src="/icons/perplexity.svg" alt="Perplexity" width={13} height={13} />
+                </span>
+                <span className="ai-ic">
+                  <img src="/icons/grok.svg" alt="Grok" width={13} height={13} />
+                </span>
               </span>
               <a
                 onClick={() =>
