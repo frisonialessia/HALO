@@ -54,6 +54,48 @@ function queryTemplates(type: string, city?: string): string[] {
   ];
 }
 
+// Estima el tipo de negocio desde lo que pega el usuario (web/nombre) para que
+// la preview se sienta "suya" (vermutería, restaurante, clínica…) en vez de un
+// genérico "negocio local". Sin API: diccionario de señales. El análisis real
+// lo afina con precisión.
+const TYPE_HINTS: [RegExp, string][] = [
+  [/vermouth|vermut/, "vermutería"],
+  [/pizz/, "pizzería"],
+  [/sushi|ramen|japones|nikkei/, "restaurante japonés"],
+  [/taquer|tacos|mexican/, "restaurante mexicano"],
+  [/trattor|osteria|italian|pasta/, "restaurante italiano"],
+  [/burger|hamburgues/, "hamburguesería"],
+  [/restaur|asador|marisquer|tapas|bistro|brasserie|grill|cocina/, "restaurante"],
+  [/cafe|coffee|cafeter|brunch/, "cafetería"],
+  [/cocktail|cocteler|\bpub\b|cervec|\bbar\b/, "bar"],
+  [/panad|bakery|paste|reposter|croissant/, "panadería"],
+  [/helad|gelato|icecream/, "heladería"],
+  [/dental|odonto|dentist/, "clínica dental"],
+  [/clinic|medic|fisio|physio|psico|terap|salud|estetic|belleza|\bspa\b/, "clínica"],
+  [/veterinar|mascot/, "clínica veterinaria"],
+  [/peluqu|barber|salon|estilist|nails/, "peluquería"],
+  [/gym|gimnas|fitness|crossfit|yoga|pilates/, "gimnasio"],
+  [/hotel|hostal|hostel|aparthotel|alojamiento/, "hotel"],
+  [/inmobil|realestate|propiedad|vivienda/, "inmobiliaria"],
+  [/abogad|legal|\blaw\b|jurid|asesor|gestor/, "despacho de abogados"],
+  [/taller|mecanic|automo|neumatic/, "taller mecánico"],
+  [/floris|flores/, "floristería"],
+  [/joyer|relojer/, "joyería"],
+  [/librer/, "librería"],
+  [/academ|escuela|formacion|cursos|idiomas/, "academia"],
+  [/tienda|\bshop\b|store|boutique|moda|\bropa\b/, "tienda"],
+  [/agencia|marketing|publicidad|consultor|software|studio|estudio/, "agencia"],
+];
+
+function guessType(input: string): string | undefined {
+  const t = input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+  for (const [re, type] of TYPE_HINTS) if (re.test(t)) return type;
+  return undefined;
+}
+
 // Simula una auditoría para CUALQUIER negocio, sin API. Determinista por input.
 // Útil para "modo simulado" de cualquier búsqueda sin coste.
 export function mockAudit(
@@ -70,7 +112,7 @@ export function mockAudit(
       .replace(/\/.*$/, "") || "Tu negocio";
   const biz = {
     name: business?.name || cleanName,
-    business_type: business?.business_type || "negocio local",
+    business_type: business?.business_type || guessType(input) || "negocio local",
     city: business?.city,
     website: business?.website,
   };
