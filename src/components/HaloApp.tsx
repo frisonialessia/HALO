@@ -618,6 +618,21 @@ function FloatingFab({ hidden, onClick }: { hidden: boolean; onClick: () => void
 }
 
 // ============== Vista HALO (asistente) ==============
+// Etiquetas legibles de cada motor + cómo listarlos en una frase.
+const ENGINE_LABELS: Record<string, string> = {
+  perplexity: "Perplexity",
+  chatgpt: "ChatGPT",
+  gemini: "Gemini",
+  claude: "Claude",
+  grok: "Grok",
+  deepseek: "DeepSeek",
+};
+function listEngines(keys: string[]): string {
+  const names = keys.map((k) => ENGINE_LABELS[k] ?? k);
+  if (names.length <= 1) return names[0] ?? "Perplexity";
+  return names.slice(0, -1).join(", ") + " y " + names[names.length - 1];
+}
+
 // Texto de ejemplo para la demo (sin auditoría real): muestra el valor del
 // generador sin gastar la API de pago. Coherente con el resto de datos demo.
 const SAMPLE_ASSETS: AiAssets = {
@@ -724,9 +739,9 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
         setAssets(SAMPLE_ASSETS);
         return;
       }
-      const missedQueries = (audit.probes ?? [])
-        .filter((p) => !p.appeared)
-        .map((p) => p.query);
+      const missedQueries = Array.from(
+        new Set((audit.probes ?? []).filter((p) => !p.appeared).map((p) => p.query))
+      );
       const res = await fetch("/api/assets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -865,6 +880,7 @@ function AssetsSection({ audit }: { audit: AuditData | null }) {
 function HaloView({ audit }: { audit: AuditData | null }) {
   const score = audit ? Math.round(audit.shareOfAnswer * 10) : 3;
   const bizName = audit?.business.name ?? "tu negocio";
+  const enginesLabel = audit ? listEngines(Object.keys(audit.byEngine)) : "Perplexity";
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -880,7 +896,7 @@ function HaloView({ audit }: { audit: AuditData | null }) {
           think: "Analizando tu negocio…",
           text: (
             <>
-              Analicé la presencia de <b>{bizName}</b> en Perplexity: hoy te recomiendan <b>{score} de cada 10 veces</b>. Tengo acciones concretas para que te elijan más. Si tienes dudas sobre AEO o cómo funciona esto, pregúntame primero; si no, empezamos por la de mayor impacto.
+              Analicé la presencia de <b>{bizName}</b> en {enginesLabel}: hoy te recomiendan <b>{score} de cada 10 veces</b>. Tengo acciones concretas para que te elijan más. Si tienes dudas sobre AEO o cómo funciona esto, pregúntame primero; si no, empezamos por la de mayor impacto.
             </>
           ),
         },
