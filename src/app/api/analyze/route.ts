@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { identifyBusiness, toProject } from "@/lib/engines/identify";
 import { runAudit } from "@/lib/audit";
+import { enforceRateLimit } from "@/lib/ratelimit";
 
 // POST /api/analyze  — entrada pública de la landing.
 // Recibe lo que el usuario pega (web, nombre, Google Maps…), identifica el
@@ -9,7 +10,8 @@ import { runAudit } from "@/lib/audit";
 // + el Share of Answer real.
 //
 // Nota: las consultas corren en paralelo, así que identificar + auditar
-// cabe de sobra en maxDuration. Pendiente: rate-limit (gasta API por clic).
+// cabe de sobra en maxDuration. Protegido con rate-limit (cada llamada
+// gasta ~11 peticiones a Perplexity).
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -20,6 +22,9 @@ const AnalyzeRequest = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req.headers);
+  if (limited) return limited;
+
   let body: unknown;
   try {
     body = await req.json();

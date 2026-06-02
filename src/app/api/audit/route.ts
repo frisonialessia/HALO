@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { runAudit } from "@/lib/audit";
+import { enforceRateLimit } from "@/lib/ratelimit";
 import type { Project } from "@/types";
 
 // POST /api/audit
@@ -30,6 +31,9 @@ const AuditRequest = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req.headers);
+  if (limited) return limited;
+
   let body: unknown;
   try {
     body = await req.json();
