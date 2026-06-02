@@ -252,10 +252,7 @@ export default function HaloApp() {
   const [bizInput, setBizInput] = useState("");
   const [audit, setAudit] = useState<AuditData | null>(null);
   const [auditErr, setAuditErr] = useState("");
-  const [manual, setManual] = useState(false);
-  const [mName, setMName] = useState("");
-  const [mType, setMType] = useState("");
-  const [mCity, setMCity] = useState("");
+  const [prefillName, setPrefillName] = useState("");
 
   useEffect(() => {
     if (screen !== "landing") return;
@@ -279,7 +276,6 @@ export default function HaloApp() {
     const input = bizInput.trim();
     if (!input) return;
     setAuditErr("");
-    setManual(false);
     setAudit(null);
     setScreen("loading");
     const stop = runLoadingSteps();
@@ -292,10 +288,10 @@ export default function HaloApp() {
       const data = await res.json();
       stop();
       if (data?.needManual) {
-        // La IA no reconoce el negocio (nuevo/pequeño): lo pedimos a mano.
-        setMName(/^https?:\/\//i.test(input) ? "" : input);
-        setScreen("landing");
-        setManual(true);
+        // La IA no reconoce el negocio (nuevo/pequeño): se completa en Ajustes.
+        setPrefillName(/^https?:\/\//i.test(input) ? "" : input);
+        setScreen("app");
+        setView("set");
         return;
       }
       if (!res.ok) throw new Error(data?.error || "No se pudo analizar");
@@ -310,10 +306,11 @@ export default function HaloApp() {
     }
   }
 
-  // Análisis con los datos a mano (negocio que la IA aún no conoce).
-  async function startManualAudit() {
-    const name = mName.trim();
-    const business_type = mType.trim();
+  // Análisis con los datos a mano (desde Ajustes, para negocios que la IA
+  // aún no conoce). Recibe los campos del formulario de Ajustes.
+  async function runManualAudit(name: string, business_type: string, city: string) {
+    name = name.trim();
+    business_type = business_type.trim();
     if (!name || !business_type) {
       setAuditErr("Pon al menos el nombre y el tipo de negocio.");
       return;
@@ -326,30 +323,29 @@ export default function HaloApp() {
       const res = await fetch("/api/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, business_type, city: mCity.trim() }),
+        body: JSON.stringify({ name, business_type, city: city.trim() }),
       });
       const data = await res.json();
       stop();
       if (!res.ok) throw new Error(data?.error || "No se pudo analizar");
       setLoadDone(LOAD_STEPS.length - 1);
       setAudit({
-        business: { name, business_type, city: mCity.trim() || undefined },
+        business: { name, business_type, city: city.trim() || undefined },
         ...data,
       } as AuditData);
-      setManual(false);
       setScreen("app");
       setView("halo");
     } catch (e) {
       stop();
       setAuditErr(e instanceof Error ? e.message : "No se pudo analizar");
-      setScreen("landing");
+      setScreen("app");
+      setView("set");
     }
   }
 
   // Demo sin coste: la animación de siempre con los datos de ejemplo.
   function startDemo() {
     setAudit(null);
-    setManual(false);
     setScreen("loading");
     setLoadDone(-1);
     LOAD_STEPS.forEach((_, i) => {
@@ -415,42 +411,6 @@ export default function HaloApp() {
             {auditErr && (
               <div style={{ marginTop: 12, fontSize: 13, fontWeight: 500, color: "var(--text-2)" }}>
                 {auditErr}
-              </div>
-            )}
-            {manual && (
-              <div
-                className="glass"
-                style={{ maxWidth: 640, margin: "14px auto 0", padding: 18, textAlign: "left" }}
-              >
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)", marginBottom: 12 }}>
-                  La IA todavía no reconoce tu negocio. Cuéntanoslo y lo medimos igual:
-                </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  <input
-                    placeholder="Nombre del negocio"
-                    value={mName}
-                    onChange={(e) => setMName(e.target.value)}
-                    style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
-                  />
-                  <input
-                    placeholder="Tipo (ej. restaurante italiano)"
-                    value={mType}
-                    onChange={(e) => setMType(e.target.value)}
-                    style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
-                  />
-                  <input
-                    placeholder="Ciudad"
-                    value={mCity}
-                    onChange={(e) => setMCity(e.target.value)}
-                    style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
-                  />
-                  <button
-                    onClick={startManualAudit}
-                    style={{ border: "none", background: "#000", color: "#fff", borderRadius: 6, padding: "12px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
-                  >
-                    Analizar mi negocio
-                  </button>
-                </div>
               </div>
             )}
             <div className="sectors">
@@ -526,6 +486,9 @@ export default function HaloApp() {
           menuOpen={menuOpen}
           setMenuOpen={setMenuOpen}
           audit={audit}
+          onAnalyze={runManualAudit}
+          prefillName={prefillName}
+          auditErr={auditErr}
         />
       )}
     </>
@@ -540,6 +503,9 @@ function AppShell({
   menuOpen,
   setMenuOpen,
   audit,
+  onAnalyze,
+  prefillName,
+  auditErr,
 }: {
   view: View;
   setView: (v: View) => void;
@@ -547,6 +513,9 @@ function AppShell({
   menuOpen: boolean;
   setMenuOpen: (b: boolean) => void;
   audit: AuditData | null;
+  onAnalyze: (name: string, business_type: string, city: string) => void;
+  prefillName: string;
+  auditErr: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -614,7 +583,14 @@ function AppShell({
       <div className="stage">
         {view === "halo" && <HaloView audit={audit} />}
         {view === "dash" && <DashView audit={audit} />}
-        {view === "set" && <SettingsView setView={setView} />}
+        {view === "set" && (
+          <SettingsView
+            setView={setView}
+            onAnalyze={onAnalyze}
+            prefillName={prefillName}
+            auditErr={auditErr}
+          />
+        )}
       </div>
 
       <FloatingFab hidden={view === "halo"} onClick={() => setView("halo")} />
@@ -987,7 +963,20 @@ function DashView({ audit }: { audit: AuditData | null }) {
 type ConnKey = "web" | "maps" | "ig" | "tk" | "wa";
 type ModeKey = "expert" | "watch" | "auto";
 
-function SettingsView({ setView }: { setView: (v: View) => void }) {
+function SettingsView({
+  setView,
+  onAnalyze,
+  prefillName,
+  auditErr,
+}: {
+  setView: (v: View) => void;
+  onAnalyze: (name: string, business_type: string, city: string) => void;
+  prefillName: string;
+  auditErr: string;
+}) {
+  const [bName, setBName] = useState(prefillName);
+  const [bType, setBType] = useState("");
+  const [bCity, setBCity] = useState("");
   const [conns, setConns] = useState<Record<ConnKey, boolean>>({
     web: true,
     maps: false,
@@ -1019,6 +1008,43 @@ function SettingsView({ setView }: { setView: (v: View) => void }) {
           <Ic ic="back" size={13} />
           Volver
         </span>
+
+        <div className="glass" style={{ padding: 24, marginBottom: 16 }}>
+          <div className="secttitle">Tu negocio</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", margin: "2px 0 14px", lineHeight: 1.5 }}>
+            Si la IA aún no te conoce, dinos quién eres y medimos tu presencia igual.
+          </div>
+          <div style={{ display: "grid", gap: 8 }}>
+            <input
+              placeholder="Nombre del negocio"
+              value={bName}
+              onChange={(e) => setBName(e.target.value)}
+              style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
+            />
+            <input
+              placeholder="Tipo (ej. restaurante italiano)"
+              value={bType}
+              onChange={(e) => setBType(e.target.value)}
+              style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
+            />
+            <input
+              placeholder="Ciudad"
+              value={bCity}
+              onChange={(e) => setBCity(e.target.value)}
+              style={{ border: "1px solid var(--gline)", borderRadius: 8, padding: "11px 14px", fontSize: 13, fontWeight: 500, outline: "none", background: "#fff", fontFamily: "inherit" }}
+            />
+            {auditErr && (
+              <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)" }}>{auditErr}</div>
+            )}
+            <button
+              type="button"
+              onClick={() => onAnalyze(bName, bType, bCity)}
+              style={{ border: "none", background: "#000", color: "#fff", borderRadius: 6, padding: "12px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", justifySelf: "start" }}
+            >
+              Analizar mi negocio
+            </button>
+          </div>
+        </div>
 
         <div className="glass" style={{ padding: 24, marginBottom: 16 }}>
           <div className="secttitle">Conecta tu negocio</div>
