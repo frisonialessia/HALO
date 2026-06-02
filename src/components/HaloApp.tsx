@@ -453,6 +453,7 @@ export default function HaloApp() {
   const [prefillName, setPrefillName] = useState("");
   const [analyzingLabel, setAnalyzingLabel] = useState("tu negocio");
   const [history, setHistory] = useState<HistoryEntry<AuditData>[]>([]);
+  const bizInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (screen !== "landing") return;
@@ -580,10 +581,10 @@ export default function HaloApp() {
     }, 500 + 4 * 620 + 450);
   }
 
+  // "Entrar" empuja a añadir SU negocio (no a la demo): foco en el campo.
   function enterApp() {
-    setAudit(DEMO_AUDIT);
-    setScreen("app");
-    setView("halo");
+    bizInputRef.current?.focus();
+    bizInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   // Abre una auditoría guardada del historial.
@@ -598,6 +599,7 @@ export default function HaloApp() {
     setBizInput("");
     setMenuOpen(false);
     setScreen("landing");
+    setTimeout(() => bizInputRef.current?.focus(), 120);
   }
 
   function removeFromHistory(id: string) {
@@ -646,6 +648,7 @@ export default function HaloApp() {
             </p>
             <div className="glass lsearch">
               <input
+                ref={bizInputRef}
                 placeholder="Pega tu web, Google Maps o tu Instagram"
                 autoComplete="off"
                 value={bizInput}
@@ -883,6 +886,45 @@ function AppShell({
           </div>
         </div>
       </header>
+
+      {audit?.demo && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 14,
+            flexWrap: "wrap",
+            padding: "10px 20px",
+            background: "#FFF4EF",
+            borderBottom: "1px solid var(--gline)",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "var(--text)",
+          }}
+        >
+          <span>
+            Estás viendo un <b>ejemplo</b>. Analiza tu negocio para ver tus datos reales.
+          </span>
+          <button
+            type="button"
+            onClick={onNewAnalysis}
+            style={{
+              border: "none",
+              background: "var(--text)",
+              color: "#fff",
+              borderRadius: 999,
+              padding: "7px 16px",
+              fontSize: 12.5,
+              fontWeight: 700,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            Analizar mi negocio →
+          </button>
+        </div>
+      )}
 
       <div className="stage">
         {view === "halo" && <HaloView audit={audit} onHistory={() => setView("hist")} />}
