@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, ReactNode } from "react";
+import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
 
 // ============== Orbe (logo) ==============
 function Orb({ className = "", thinking = false }: { className?: string; thinking?: boolean }) {
@@ -93,10 +93,15 @@ type Screen = "landing" | "loading" | "app";
 type View = "halo" | "dash" | "set";
 type Msg = { role: "bot" | "me"; text: ReactNode; think?: string };
 type AuditData = {
-  business: { name: string; business_type: string; city?: string };
+  business: { name: string; business_type: string; city?: string; website?: string };
   shareOfAnswer: number; // 0..1 → "X de 10"
   byEngine: Record<string, number>;
   probes?: { query: string; appeared: boolean; position?: number }[];
+};
+type AiAssets = {
+  description: string;
+  faqs: { q: string; a: string }[];
+  tips: string[];
 };
 
 // ============== Datos demo ==============
@@ -613,6 +618,250 @@ function FloatingFab({ hidden, onClick }: { hidden: boolean; onClick: () => void
 }
 
 // ============== Vista HALO (asistente) ==============
+// Texto de ejemplo para la demo (sin auditoría real): muestra el valor del
+// generador sin gastar la API de pago. Coherente con el resto de datos demo.
+const SAMPLE_ASSETS: AiAssets = {
+  description:
+    "Osteria Vista es una trattoría italiana en el centro de Madrid especializada en pasta fresca artesanal y pizza al horno de leña. Ambiente acogedor ideal para cenas en pareja y grupos, con platos vegetarianos y una cuidada carta de vinos italianos. Abierta cada día para comidas y cenas, con reserva online.",
+  faqs: [
+    {
+      q: "¿Cuál es el mejor restaurante italiano en Madrid?",
+      a: "Osteria Vista destaca por su pasta fresca artesanal y su pizza al horno de leña, en un ambiente acogedor muy bien valorado por los locales.",
+    },
+    {
+      q: "¿Dónde cenar pasta fresca en Madrid?",
+      a: "En Osteria Vista, en el centro de Madrid, elaboran la pasta a diario de forma artesanal.",
+    },
+    {
+      q: "¿Qué italiano en Madrid acepta reservas online?",
+      a: "Osteria Vista permite reservar mesa online y abre para comidas y cenas todos los días.",
+    },
+    {
+      q: "¿Hay italianos con opciones vegetarianas en Madrid?",
+      a: "Sí, Osteria Vista ofrece varios platos vegetarianos además de su carta de pasta y pizza.",
+    },
+    {
+      q: "¿Dónde ir a cenar en pareja en Madrid?",
+      a: "Osteria Vista tiene un ambiente íntimo y acogedor, ideal para cenas en pareja con cocina italiana casera.",
+    },
+  ],
+  tips: [
+    "Completa tu ficha de Google con horarios, fotos y descripción: es la fuente nº1 que leen los asistentes de IA.",
+    "Publica una sección de FAQ en tu web con las preguntas reales de tus clientes.",
+    "Consigue reseñas que mencionen tus platos estrella; la IA las usa para recomendarte.",
+  ],
+};
+
+const assetBoxStyle: CSSProperties = {
+  background: "var(--sand)",
+  border: "1px solid var(--gline)",
+  borderRadius: "var(--r-card)",
+  padding: "14px 16px",
+};
+
+const assetHeadStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 10,
+  marginBottom: 10,
+  fontSize: 11,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: ".06em",
+  color: "var(--text-2)",
+};
+
+// Botón "Copiar" con confirmación efímera.
+function CopyButton({ text }: { text: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setDone(true);
+          setTimeout(() => setDone(false), 1600);
+        } catch {
+          /* clipboard no disponible */
+        }
+      }}
+      style={{
+        flexShrink: 0,
+        border: "1px solid var(--gline)",
+        background: done ? "var(--text)" : "#fff",
+        color: done ? "#fff" : "var(--text)",
+        borderRadius: "var(--r-btn)",
+        padding: "5px 11px",
+        fontSize: 11.5,
+        fontWeight: 600,
+        cursor: "pointer",
+        fontFamily: "inherit",
+        transition: "all .15s",
+      }}
+    >
+      {done ? "Copiado ✓" : "Copiar"}
+    </button>
+  );
+}
+
+// Generador de "AI Assets": el botón que convierte el diagnóstico en acción.
+// Pide a la IA el texto optimizado (descripción + FAQ + acciones) listo para
+// copiar. En demo (sin auditoría real) muestra un ejemplo sin gastar API.
+function AssetsSection({ audit }: { audit: AuditData | null }) {
+  const [assets, setAssets] = useState<AiAssets | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function run() {
+    setErr("");
+    setLoading(true);
+    try {
+      if (!audit?.business) {
+        // Demo: ejemplo instantáneo, sin llamar a la API de pago.
+        await new Promise((r) => setTimeout(r, 850));
+        setAssets(SAMPLE_ASSETS);
+        return;
+      }
+      const missedQueries = (audit.probes ?? [])
+        .filter((p) => !p.appeared)
+        .map((p) => p.query);
+      const res = await fetch("/api/assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: audit.business.name,
+          business_type: audit.business.business_type,
+          city: audit.business.city,
+          website: audit.business.website,
+          missedQueries,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "No pudimos generar el texto");
+      setAssets(data as AiAssets);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "No pudimos generar el texto");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 26, paddingTop: 22, borderTop: "1px solid var(--gline)" }}>
+      <h2>Tu kit para que la IA te recomiende</h2>
+      <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5, margin: "-8px 0 16px" }}>
+        Texto listo para copiar en tu web y tu ficha de Google, pensado para las
+        búsquedas donde hoy no apareces.
+      </p>
+
+      {!assets && (
+        <button
+          type="button"
+          onClick={run}
+          disabled={loading}
+          style={{
+            border: "none",
+            background: "var(--text)",
+            color: "#fff",
+            borderRadius: "var(--r-btn)",
+            padding: "12px 18px",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: loading ? "default" : "pointer",
+            fontFamily: "inherit",
+            opacity: loading ? 0.7 : 1,
+          }}
+        >
+          {loading ? "Generando tu texto…" : "Generar texto optimizado para IA"}
+        </button>
+      )}
+
+      {err && (
+        <div style={{ marginTop: 12, fontSize: 13, fontWeight: 500, color: "var(--deep)" }}>
+          {err}
+        </div>
+      )}
+
+      {assets && (
+        <div style={{ display: "grid", gap: 14 }}>
+          {assets.description && (
+            <div style={assetBoxStyle}>
+              <div style={assetHeadStyle}>
+                <span>Descripción optimizada</span>
+                <CopyButton text={assets.description} />
+              </div>
+              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 500, color: "var(--text)", lineHeight: 1.6 }}>
+                {assets.description}
+              </p>
+            </div>
+          )}
+
+          {assets.faqs.length > 0 && (
+            <div style={assetBoxStyle}>
+              <div style={assetHeadStyle}>
+                <span>Preguntas frecuentes (FAQ)</span>
+                <CopyButton text={assets.faqs.map((f) => `${f.q}\n${f.a}`).join("\n\n")} />
+              </div>
+              <div style={{ display: "grid", gap: 12 }}>
+                {assets.faqs.map((f, i) => (
+                  <div key={i}>
+                    <div style={{ marginBottom: 3, fontSize: 13.5, fontWeight: 700, color: "var(--text)", lineHeight: 1.45 }}>
+                      {f.q}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.55 }}>
+                      {f.a}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {assets.tips.length > 0 && (
+            <div style={assetBoxStyle}>
+              <div style={assetHeadStyle}>
+                <span>Acciones recomendadas</span>
+              </div>
+              <div style={{ display: "grid", gap: 10 }}>
+                {assets.tips.map((t, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <span style={{ flexShrink: 0, width: 5, height: 5, borderRadius: "50%", background: "var(--deep)", marginTop: 7 }} />
+                    <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text)", lineHeight: 1.5 }}>
+                      {t}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={run}
+            disabled={loading}
+            style={{
+              justifySelf: "start",
+              border: "1px solid var(--gline)",
+              background: "#fff",
+              color: "var(--text-2)",
+              borderRadius: "var(--r-btn)",
+              padding: "9px 14px",
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: loading ? "default" : "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {loading ? "Generando…" : "Regenerar"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HaloView({ audit }: { audit: AuditData | null }) {
   const score = audit ? Math.round(audit.shareOfAnswer * 10) : 3;
   const bizName = audit?.business.name ?? "tu negocio";
@@ -697,6 +946,7 @@ function HaloView({ audit }: { audit: AuditData | null }) {
               <div className={`kd ${k.op ? "op" : ""}`}>{k.d}</div>
             </div>
           ))}
+          <AssetsSection audit={audit} />
         </div>
       </div>
 
