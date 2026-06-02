@@ -88,6 +88,8 @@
   .howto-step .hs-num{width:30px;height:30px;border-radius:50%;background:var(--text);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:700;margin-bottom:16px}
   .howto-step h3{font-size:16px;font-weight:700;margin-bottom:8px;letter-spacing:-.01em}
   .howto-step p{font-size:13.5px;font-weight:500;color:var(--text-2);line-height:1.55}
+  .howto-h3{font-size:19px;font-weight:700;letter-spacing:-.015em;text-align:center;margin:46px 0 18px}
+  .pill-tag{display:inline-block;background:linear-gradient(100deg,var(--coral),var(--amber));color:#fff;font-size:11px;font-weight:700;letter-spacing:.05em;padding:4px 11px;border-radius:999px;margin-bottom:12px}
 
   /* ===== LOADING ===== */
   .loadbox{text-align:center}
@@ -106,11 +108,11 @@
   header.scrolled{background:rgba(252,250,247,.88);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--gline)}
   .hbar{width:100%;max-width:1120px;display:flex;align-items:center;justify-content:space-between;padding:0 30px}
   .logo{width:32px;height:32px;--b:4px;cursor:pointer}
-  .hnav{display:flex;gap:4px;padding:5px;border-radius:8px}
-  .hnav button{border:none;background:transparent;font-family:inherit;font-size:13px;font-weight:600;color:var(--text-2);cursor:pointer;padding:9px 24px;border-radius:6px;transition:.2s}
+  .hnav{display:flex;gap:4px;padding:5px;border-radius:999px}
+  .hnav button{border:none;background:transparent;font-family:inherit;font-size:13px;font-weight:600;color:var(--text-2);cursor:pointer;padding:9px 24px;border-radius:999px;transition:.2s}
   .hnav button:hover{color:var(--text)}.hnav button.on{background:var(--text);color:#fff}
   .bizmenu{position:relative}
-  .bizbtn{font-size:13px;font-weight:600;color:var(--text);background:#fff;border:1px solid var(--gline);border-radius:6px;padding:10px 17px;cursor:pointer;display:flex;align-items:center;gap:7px}
+  .bizbtn{font-size:13px;font-weight:600;color:var(--text);background:#fff;border:1px solid var(--gline);border-radius:999px;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:7px}
   .dropdown{position:absolute;right:0;top:48px;width:215px;padding:7px;display:none;z-index:30}
   .dropdown.open{display:block}
   .dropdown .di{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:var(--r-btn);font-size:13px;font-weight:600;color:var(--text);cursor:pointer;transition:.15s}

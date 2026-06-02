@@ -722,6 +722,35 @@ export default function HaloApp() {
                 </p>
               </div>
             </div>
+
+            <h3 className="howto-h3">Las tres patas de la visibilidad en IA</h3>
+            <div className="howto-grid">
+              <div className="howto-step">
+                <span className="pill-tag">AEO</span>
+                <h3>Answer Engine Optimization</h3>
+                <p>
+                  Aparecer en la respuesta cuando un cliente pregunta a la IA
+                  &quot;¿cuál es el mejor…?&quot;. Es el nuevo SEO: ya no basta con salir en
+                  Google, hay que salir en ChatGPT, Perplexity y Gemini.
+                </p>
+              </div>
+              <div className="howto-step">
+                <span className="pill-tag">LLMO</span>
+                <h3>Large Language Model Optimization</h3>
+                <p>
+                  Cómo los modelos de IA entienden y describen tu negocio. Optimizamos
+                  tu información para que te interpreten bien y te citen con seguridad.
+                </p>
+              </div>
+              <div className="howto-step">
+                <span className="pill-tag">LOCAL</span>
+                <h3>Local Intelligence</h3>
+                <p>
+                  Tu visibilidad por zona y barrio: dónde ya te recomiendan y dónde
+                  tienes hueco para captar clientes cercanos.
+                </p>
+              </div>
+            </div>
           </section>
         </div>
       )}
@@ -939,7 +968,7 @@ function AppShell({
     <div className="screen active" id="s-app">
       <header className={scrolled ? "scrolled" : ""}>
         <div className="hbar">
-          <div className="logo haloOrb" onClick={() => setView("halo")}>
+          <div className="logo haloOrb" onClick={() => setScreen("landing")} title="Salir al inicio">
             <span className="blob b1" />
             <span className="blob b2" />
             <span className="blob b3" />
@@ -955,7 +984,17 @@ function AppShell({
           </nav>
           <div className="bizmenu">
             <button className="bizbtn" onClick={() => setMenuOpen(!menuOpen)}>
-              Tu negocio <span style={{ color: "var(--muted)" }}>▾</span>
+              <span
+                style={{
+                  maxWidth: 170,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {audit?.business.name ?? "Tu negocio"}
+              </span>
+              <span style={{ color: "var(--muted)" }}>▾</span>
             </button>
             {menuOpen && (
               <div className="glass dropdown open">
@@ -1424,6 +1463,8 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
   const bizName = audit?.business.name ?? "tu negocio";
   const enginesLabel = audit ? listEngines(Object.keys(audit.byEngine)) : "Perplexity";
   const realProbes = audit ? uniqueProbes(audit.probes ?? []) : [];
+  const gotProbes = realProbes.filter((p) => p.appeared);
+  const missedProbes = realProbes.filter((p) => !p.appeared);
   const suggestions = audit
     ? ["¿En qué búsquedas no aparezco?", "¿Cómo voy por motor?", "Genérame el texto optimizado"]
     : SUGGESTIONS;
@@ -1495,28 +1536,56 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
           </div>
           {audit ? (
             <>
-              <h2>En qué búsquedas te recomiendan</h2>
-              {realProbes.map((p, i) => (
-                <div className="know" key={i}>
-                  <div className="kt">
-                    <span className={`chk ${p.appeared ? "ok" : "miss"}`}>
-                      {p.appeared && (
-                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m5 12 5 5 9-10" />
-                        </svg>
-                      )}
-                    </span>
-                    {p.query}
+              <h2>Keywords a trabajar</h2>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.5, margin: "-6px 0 18px" }}>
+                Te recomiendan en{" "}
+                <b style={{ color: "var(--text)" }}>
+                  {gotProbes.length} de {realProbes.length}
+                </b>{" "}
+                búsquedas de clientes. Prioriza las que te faltan: son tu mayor oportunidad.
+              </div>
+
+              {missedProbes.length > 0 && (
+                <>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-2)", margin: "20px 0 12px" }}>
+                    Por conquistar · {missedProbes.length}
                   </div>
-                  <div className={`kd ${!p.appeared ? "op" : ""}`}>
-                    {p.appeared
-                      ? p.position
-                        ? `Te mencionan · puesto #${p.position}`
-                        : "Te mencionan en esta búsqueda"
-                      : "Aún no apareces aquí. Oportunidad de ganar visibilidad."}
+                  {missedProbes.map((p, i) => (
+                    <div className="know" key={"m" + i}>
+                      <div className="kt">
+                        <span className="chk miss" />
+                        {p.query}
+                      </div>
+                      <div className="kd op">
+                        Aún no te recomiendan aquí. Optimiza tu contenido para esta búsqueda.
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {gotProbes.length > 0 && (
+                <>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-2)", margin: "20px 0 12px" }}>
+                    Ya te recomiendan · {gotProbes.length}
                   </div>
-                </div>
-              ))}
+                  {gotProbes.map((p, i) => (
+                    <div className="know" key={"g" + i}>
+                      <div className="kt">
+                        <span className="chk ok">
+                          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m5 12 5 5 9-10" />
+                          </svg>
+                        </span>
+                        {p.query}
+                      </div>
+                      <div className="kd">
+                        {p.position ? `Apareces · puesto #${p.position}` : "Apareces en esta búsqueda"}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
             </>
           ) : (
             <>
