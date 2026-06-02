@@ -1906,6 +1906,7 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const convoRef = useRef<{ role: "user" | "model"; content: string }[]>([]);
 
   // Boot del agente: piensa 900ms y suelta el mensaje inicial.
   useEffect(() => {
@@ -1939,17 +1940,46 @@ function HaloView({ audit, onHistory }: { audit: AuditData | null; onHistory: ()
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, thinking]);
 
-  function send(text: string) {
+  // Contexto del negocio (si hay análisis) para que el chat responda con datos reales.
+  const businessCtx = audit
+    ? {
+        name: audit.business.name,
+        business_type: audit.business.business_type,
+        city: audit.business.city,
+        score,
+        appeared: gotProbes.length,
+        total: realProbes.length,
+        byEngine: audit.byEngine,
+        missed: missedProbes.map((p) => p.query),
+        competitors: extractCompetitors(realProbes, audit.business.name).map((c) => c.name),
+      }
+    : undefined;
+
+  // Chat REAL (LLM vía /api/chat). Si la IA no está disponible, cae a las
+  // respuestas locales para no romperse nunca.
+  async function send(text: string) {
     const v = text.trim();
     if (!v) return;
     setMessages((m) => [...m, { role: "me", text: v }]);
     setInput("");
     setThinking(true);
-    window.setTimeout(() => {
+    convoRef.current = [...convoRef.current, { role: "user" as const, content: v }].slice(-10);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: convoRef.current, lang, business: businessCtx }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.reply) throw new Error("fallback");
+      convoRef.current = [...convoRef.current, { role: "model" as const, content: data.reply }].slice(-10);
+      setMessages((m) => [...m, { role: "bot", text: data.reply }]);
+    } catch {
       const answer = audit ? answerReal(v, audit, lang) : pickAnswer(v, lang);
       setMessages((m) => [...m, { role: "bot", text: answer }]);
+    } finally {
       setThinking(false);
-    }, 900);
+    }
   }
 
   return (
