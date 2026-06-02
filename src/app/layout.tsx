@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Halo",
   description:
-    "Mide y mejora cómo ChatGPT, Perplexity y Gemini recomiendan tu negocio.",
+    "Measure and improve how ChatGPT, Perplexity and Gemini recommend your business.",
 };
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="en">
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap"

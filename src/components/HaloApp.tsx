@@ -6,6 +6,7 @@ import { isValidEmail, rememberLeadEmail, savedLeadEmail, submitLead } from "@/l
 import { mockAudit } from "@/lib/mock";
 import { loadPrefs, savePrefs } from "@/lib/prefs";
 import { addTrendPoint, getTrend, type TrendPoint } from "@/lib/trend";
+import { translate, LangContext, type Lang, type TFn } from "@/lib/i18n";
 
 // ============== Orbe (logo) ==============
 function Orb({ className = "", thinking = false }: { className?: string; thinking?: boolean }) {
@@ -101,13 +102,8 @@ type AiAssets = {
 };
 
 // ============== Datos demo ==============
-const SECTORS = ["Restaurantes", "Clínicas", "SaaS", "Hoteles"];
-const LOAD_STEPS = [
-  "Localizando tu negocio",
-  "Preguntando a los buscadores con IA",
-  "Midiendo cuánto te eligen",
-  "Preparando tus recomendaciones",
-];
+const SECTORS = ["sector.0", "sector.1", "sector.2", "sector.3"];
+const LOAD_STEPS = ["load.s1", "load.s2", "load.s3", "load.s4"];
 
 const KNOW_ITEMS: { ok: boolean; t: string; d: string; op?: boolean }[] = [
   { ok: true, t: "Qué tipo de negocio eres", d: "Restaurante italiano · pasta artesanal. Lo tienen claro." },
@@ -467,10 +463,12 @@ export default function HaloApp() {
   const [audit, setAudit] = useState<AuditData | null>(null);
   const [auditErr, setAuditErr] = useState("");
   const [prefillName, setPrefillName] = useState("");
-  const [analyzingLabel, setAnalyzingLabel] = useState("tu negocio");
+  const [analyzingLabel, setAnalyzingLabel] = useState("your business");
   const [history, setHistory] = useState<HistoryEntry<AuditData>[]>([]);
   const bizInputRef = useRef<HTMLInputElement>(null);
   const [previewInput, setPreviewInput] = useState("");
+  const [lang, setLang] = useState<Lang>("en");
+  const tr: TFn = (key, vars) => translate(key, lang, vars);
 
   useEffect(() => {
     if (screen !== "landing") return;
@@ -482,6 +480,19 @@ export default function HaloApp() {
   useEffect(() => {
     setHistory(listHistory<AuditData>());
   }, []);
+
+  // Idioma: inglés por defecto; carga el guardado y sincroniza <html lang>.
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("halo:lang") : null;
+    if (saved === "es" || saved === "en") setLang(saved);
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem("halo:lang", lang);
+    } catch {}
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   // Guarda una auditoría en el historial local y devuelve la lista nueva.
   function rememberAudit(a: AuditData) {
@@ -639,7 +650,7 @@ export default function HaloApp() {
   }
 
   return (
-    <>
+    <LangContext.Provider value={{ lang, setLang }}>
       <div className="grain" />
 
       {screen === "landing" && (
@@ -650,7 +661,7 @@ export default function HaloApp() {
             </div>
             <div className="lnav-links">
               <span className="ainav">
-                Pregúntale a tu IA:
+                {tr("nav.ask")}
                 <span className="ai-ic">
                   <img src="/icons/openai.svg" alt="ChatGPT" width={13} height={13} />
                 </span>
@@ -669,27 +680,41 @@ export default function HaloApp() {
                   document.getElementById("como")?.scrollIntoView({ behavior: "smooth" })
                 }
               >
-                Cómo funciona
+                {tr("nav.how")}
               </a>
               <a className="enter" onClick={enterApp}>
-                Entrar
+                {tr("nav.enter")}
               </a>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, marginLeft: 2 }}>
+                <button
+                  type="button"
+                  onClick={() => setLang("en")}
+                  style={{ border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, color: lang === "en" ? "var(--text)" : "var(--muted)" }}
+                >
+                  EN
+                </button>
+                <span style={{ color: "var(--muted)", fontSize: 11 }}>·</span>
+                <button
+                  type="button"
+                  onClick={() => setLang("es")}
+                  style={{ border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, color: lang === "es" ? "var(--text)" : "var(--muted)" }}
+                >
+                  ES
+                </button>
+              </span>
             </div>
           </nav>
           <div className="lhero">
           <div className="lstage">
             <div className="eyebrow">AEO • LLMO • Local Intelligence</div>
             <h1>
-              Inteligencia de datos para la <span className="g">búsqueda generativa</span>.
+              {tr("hero.titleA")} <span className="g">{tr("hero.titleB")}</span>.
             </h1>
-            <p className="sub-title">
-              Halo audita el rendimiento de tu marca en LLMs y te brinda el plan de
-              acción necesario para dominar los resultados.
-            </p>
+            <p className="sub-title">{tr("hero.sub")}</p>
             <div className="glass lsearch">
               <input
                 ref={bizInputRef}
-                placeholder="Pega tu web, Google Maps o tu Instagram"
+                placeholder={tr("hero.placeholder")}
                 autoComplete="off"
                 value={bizInput}
                 onChange={(e) => setBizInput(e.target.value)}
@@ -697,7 +722,7 @@ export default function HaloApp() {
                   if (e.key === "Enter") startAudit();
                 }}
               />
-              <button onClick={startAudit}>Analizar</button>
+              <button onClick={startAudit}>{tr("hero.analyze")}</button>
             </div>
             {auditErr && (
               <div style={{ marginTop: 12, fontSize: 13, fontWeight: 500, color: "var(--text-2)" }}>
@@ -705,75 +730,53 @@ export default function HaloApp() {
               </div>
             )}
             <div className="sectors">
-              Ayudando a negocios a dominar la visibilidad en{" "}
-              <b>{SECTORS[sectorIdx]}</b>
+              {tr("hero.sectors")} <b>{tr(SECTORS[sectorIdx])}</b>
             </div>
             <div className="ltrust">
-              <span>Sin registro</span>
+              <span>{tr("trust.noSignup")}</span>
               <span className="sep" />
-              <span>Resultados en segundos</span>
+              <span>{tr("trust.seconds")}</span>
             </div>
           </div>
           </div>
 
           <section className="howto" id="como">
-            <h2>Cómo funciona</h2>
-            <p className="howto-sub">
-              Sin registro y en segundos. Esto es lo que Halo hace con tu negocio:
-            </p>
+            <h2>{tr("nav.how")}</h2>
+            <p className="howto-sub">{tr("howto.sub")}</p>
             <div className="howto-grid">
               <div className="howto-step">
                 <div className="hs-num">1</div>
-                <h3>Pegas tu negocio</h3>
-                <p>
-                  Tu web, tu Google Maps o tu nombre. Identificamos quién eres
-                  automáticamente, sin formularios.
-                </p>
+                <h3>{tr("howto.s1.t")}</h3>
+                <p>{tr("howto.s1.d")}</p>
               </div>
               <div className="howto-step">
                 <div className="hs-num">2</div>
-                <h3>Medimos tu presencia real</h3>
-                <p>
-                  Preguntamos a los buscadores con IA (ChatGPT, Perplexity…) como lo
-                  haría un cliente, y vemos cuántas veces te recomiendan.
-                </p>
+                <h3>{tr("howto.s2.t")}</h3>
+                <p>{tr("howto.s2.d")}</p>
               </div>
               <div className="howto-step">
                 <div className="hs-num">3</div>
-                <h3>Te damos el plan y el texto</h3>
-                <p>
-                  Ves en qué búsquedas apareces y generas el texto optimizado, listo
-                  para copiar en tu web y tu ficha de Google.
-                </p>
+                <h3>{tr("howto.s3.t")}</h3>
+                <p>{tr("howto.s3.d")}</p>
               </div>
             </div>
 
-            <h3 className="howto-h3">Los tres pilares de la visibilidad en IA</h3>
+            <h3 className="howto-h3">{tr("howto.pillars")}</h3>
             <div className="howto-grid">
               <div className="howto-step">
                 <span className="pill-tag">AEO</span>
                 <h3>Answer Engine Optimization</h3>
-                <p>
-                  Aparecer en la respuesta cuando un cliente pregunta a la IA
-                  &quot;¿cuál es el mejor…?&quot;. La evolución del SEO: ya no basta con aparecer en
-                  Google; también es necesario aparecer en ChatGPT, Perplexity y Gemini.
-                </p>
+                <p>{tr("howto.aeo.d")}</p>
               </div>
               <div className="howto-step">
                 <span className="pill-tag">LLMO</span>
                 <h3>Large Language Model Optimization</h3>
-                <p>
-                  Cómo los modelos de IA entienden y describen tu negocio. Optimizamos
-                  tu información para que te interpreten bien y te citen con seguridad.
-                </p>
+                <p>{tr("howto.llmo.d")}</p>
               </div>
               <div className="howto-step">
                 <span className="pill-tag">LOCAL</span>
                 <h3>Local Intelligence</h3>
-                <p>
-                  Tu visibilidad por zona y barrio: dónde ya te recomiendan y dónde
-                  tienes hueco para captar clientes cercanos.
-                </p>
+                <p>{tr("howto.local.d")}</p>
               </div>
             </div>
           </section>
@@ -807,7 +810,7 @@ export default function HaloApp() {
               </defs>
             </svg>
             <h2>
-              Analizando <span className="lurl">{analyzingLabel}</span>
+              {tr("load.analyzing")} <span className="lurl">{analyzingLabel}</span>
             </h2>
             <div className="lsteps">
               {LOAD_STEPS.map((s, i) => (
@@ -817,7 +820,7 @@ export default function HaloApp() {
                       <path d="m5 12 5 5 9-10" />
                     </svg>
                   </span>
-                  {s}
+                  {tr(s)}
                 </div>
               ))}
             </div>
@@ -843,7 +846,7 @@ export default function HaloApp() {
           onRemoveHistory={removeFromHistory}
         />
       )}
-    </>
+    </LangContext.Provider>
   );
 }
 
